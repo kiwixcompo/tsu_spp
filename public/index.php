@@ -37,8 +37,9 @@ if (file_exists($envFile)) {
                 }
             }
             
-            // Set environment variable
+            // Set environment variable in ALL places
             $_ENV[$name] = $value;
+            $_SERVER[$name] = $value;
             putenv("$name=$value");
         }
     }
@@ -48,6 +49,14 @@ if (file_exists($envFile)) {
 // ERROR REPORTING & LOGGING
 // ============================================================================
 $isLocal = ($_ENV['APP_ENV'] ?? 'production') === 'local';
+
+// Debug: Log environment variables (only in debug mode)
+if (($_ENV['APP_DEBUG'] ?? 'false') === 'true') {
+    error_log("ENV loaded - DB_HOST: " . ($_ENV['DB_HOST'] ?? 'NOT SET'));
+    error_log("ENV loaded - DB_DATABASE: " . ($_ENV['DB_DATABASE'] ?? 'NOT SET'));
+    error_log("ENV loaded - DB_USERNAME: " . ($_ENV['DB_USERNAME'] ?? 'NOT SET'));
+    error_log("ENV loaded - DB_PASSWORD: " . (isset($_ENV['DB_PASSWORD']) ? 'SET' : 'NOT SET'));
+}
 $isDebug = ($_ENV['APP_DEBUG'] ?? 'false') === 'true';
 
 error_reporting(E_ALL);
