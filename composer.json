@@ -1,0 +1,17 @@
+{
+    "name": "tsu/staff-portal",
+    "description": "Taraba State University Staff Profile Portal",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "phpmailer/phpmailer": "^6.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}

@@ -1,0 +1,15 @@
+# Root .htaccess - Only needed if domain points to project root
+# If domain points directly to public folder, you don't need this file
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Redirect all requests to public folder
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Prevent access to sensitive directories
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
