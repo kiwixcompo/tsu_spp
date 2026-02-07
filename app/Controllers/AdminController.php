@@ -476,7 +476,7 @@ class AdminController extends Controller
 
         try {
             // Check if faculty already exists
-            $exists = $this->db->fetchOne(
+            $exists = $this->db->fetch(
                 "SELECT id FROM faculties_departments WHERE faculty = ? LIMIT 1",
                 [$facultyName]
             );
@@ -522,7 +522,7 @@ class AdminController extends Controller
 
         try {
             // Check if department already exists in this faculty
-            $exists = $this->db->fetchOne(
+            $exists = $this->db->fetch(
                 "SELECT id FROM faculties_departments WHERE faculty = ? AND department = ?",
                 [$faculty, $department]
             );

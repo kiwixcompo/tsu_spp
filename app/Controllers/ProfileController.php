@@ -915,7 +915,7 @@ class ProfileController extends Controller
         try {
             if ($this->db) {
                 // Verify ownership
-                $publication = $this->db->fetchOne(
+                $publication = $this->db->fetch(
                     "SELECT id FROM publications WHERE id = ? AND user_id = ?",
                     [$publicationId, $user['id']]
                 );
@@ -983,7 +983,7 @@ class ProfileController extends Controller
         try {
             if ($this->db) {
                 // Verify ownership
-                $publication = $this->db->fetchOne(
+                $publication = $this->db->fetch(
                     "SELECT id FROM publications WHERE id = ? AND user_id = ?",
                     [$publicationId, $user['id']]
                 );
@@ -1049,7 +1049,7 @@ class ProfileController extends Controller
         try {
             if ($this->db) {
                 // Verify ownership
-                $education = $this->db->fetchOne(
+                $education = $this->db->fetch(
                     "SELECT id FROM education WHERE id = ? AND user_id = ?",
                     [$educationId, $user['id']]
                 );
@@ -1154,7 +1154,7 @@ class ProfileController extends Controller
         try {
             if ($this->db) {
                 // Verify ownership
-                $experience = $this->db->fetchOne(
+                $experience = $this->db->fetch(
                     "SELECT id FROM experience WHERE id = ? AND user_id = ?",
                     [$experienceId, $user['id']]
                 );
@@ -1256,7 +1256,7 @@ class ProfileController extends Controller
         try {
             if ($this->db) {
                 // Verify ownership
-                $skill = $this->db->fetchOne(
+                $skill = $this->db->fetch(
                     "SELECT id FROM skills WHERE id = ? AND user_id = ?",
                     [$skillId, $user['id']]
                 );

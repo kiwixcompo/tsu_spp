@@ -7,7 +7,12 @@
 // ============================================================================
 // LOAD ENVIRONMENT VARIABLES (FIXED VERSION)
 // ============================================================================
-$envFile = dirname(__DIR__) . '/.env';
+// Check for local environment first
+$envFile = dirname(__DIR__) . '/.env.local';
+if (!file_exists($envFile)) {
+    $envFile = dirname(__DIR__) . '/.env';
+}
+
 if (file_exists($envFile)) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
@@ -42,14 +47,19 @@ if (file_exists($envFile)) {
 // ============================================================================
 // ERROR REPORTING & LOGGING
 // ============================================================================
+$isLocal = ($_ENV['APP_ENV'] ?? 'production') === 'local';
+$isDebug = ($_ENV['APP_DEBUG'] ?? 'false') === 'true';
+
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', $isLocal ? '1' : '0'); // Show errors in local
 ini_set('log_errors', 1);
 ini_set('error_log', dirname(__DIR__) . '/error.log');
 
-// Initialize custom error logger
-require_once __DIR__ . '/../app/Core/ErrorLogger.php';
-\App\Core\ErrorLogger::init();
+// Initialize custom error logger (only in production)
+if (!$isLocal) {
+    require_once __DIR__ . '/../app/Core/ErrorLogger.php';
+    \App\Core\ErrorLogger::init();
+}
 
 // ============================================================================
 // SESSION CONFIGURATION
@@ -83,16 +93,16 @@ spl_autoload_register(function ($class) {
 });
 
 // ============================================================================
-// LOAD PHPMAILER
+// LOAD PHPMAILER (OPTIONAL)
 // ============================================================================
 $phpmailerPath = __DIR__ . '/../vendor/phpmailer/phpmailer/src';
 if (file_exists($phpmailerPath . '/PHPMailer.php')) {
     require_once $phpmailerPath . '/Exception.php';
     require_once $phpmailerPath . '/PHPMailer.php';
     require_once $phpmailerPath . '/SMTP.php';
-    error_log("✓ PHPMailer loaded successfully");
+    // PHPMailer loaded - will be used for emails
 } else {
-    error_log("✗ PHPMailer files not found at: " . $phpmailerPath);
+    // PHPMailer not found - will use PHP mail() function as fallback
 }
 
 // ============================================================================
@@ -132,39 +142,6 @@ if (empty($path) || $path === '/') {
 
 if (($_ENV['APP_DEBUG'] ?? 'false') === 'true') {
     error_log("TSU Debug - Final path: " . $path);
-}
-
-// ============================================================================
-// HOMEPAGE FAST PATH
-// ============================================================================
-// Handle homepage directly (fast path)
-if ($path === '/' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Get stats directly for homepage
-    $stats = ['total_profiles' => 2, 'total_faculties' => 11, 'total_departments' => 65];
-    $featured_profiles = [];
-
-    // Try to get real data if database is available
-    try {
-        $db = App\Core\Database::getInstance();
-        $profileModel = new App\Models\Profile();
-        $featured_profiles = $profileModel->getPublicProfiles(4);
-        
-        $totalProfiles = $db->fetch("SELECT COUNT(*) as count FROM profiles p JOIN users u ON p.user_id = u.id WHERE u.account_status = 'active'")['count'];
-        $stats['total_profiles'] = $totalProfiles;
-    } catch (Exception $e) {
-        // Use default stats if database fails
-        if (($_ENV['APP_DEBUG'] ?? 'false') === 'true') {
-            error_log("Homepage database error: " . $e->getMessage());
-        }
-    }
-
-    // Include the simple homepage
-    if (file_exists(__DIR__ . '/simple_homepage.php')) {
-        include __DIR__ . '/simple_homepage.php';
-    } else {
-        echo '<h1>TSU Staff Portal</h1><p>Welcome to the TSU Staff Portal</p>';
-    }
-    exit;
 }
 
 // ============================================================================

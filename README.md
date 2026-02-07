@@ -1,12 +1,17 @@
 # TSU Staff Profile Portal
 
-## 🚀 Quick Deploy
+## 🚀 Quick Start
 
-To update the repository with your local changes:
+### Local Development
+1. Copy `.env.local` and configure your local database
+2. Import database from `database/setup_database.sql`
+3. Access: http://localhost/tsu_spp/public/
+4. See `LOCAL_SETUP.md` for details
 
+### Deploy to Production
 **Double-click:** `UPDATE.bat`
 
-That's it! Your changes will be:
+Your changes will be:
 1. Committed to Git
 2. Pushed to GitHub: https://github.com/kiwixcompo/tsu_spp
 3. Auto-deployed to: /home4/tsuniity/staff.tsuniversity.edu.ng/
@@ -36,6 +41,15 @@ ADD UNIQUE KEY unique_staff_number (staff_number);
 mkdir -p storage/qrcodes
 chmod 755 storage/qrcodes
 ```
+
+### Optional: Install PHPMailer
+For better email delivery (Gmail SMTP), install PHPMailer:
+```bash
+composer require phpmailer/phpmailer
+```
+See `INSTALL_PHPMAILER.md` for details.
+
+**Note:** The application works without PHPMailer using PHP's built-in mail() function.
 
 ## 🌐 Links
 
