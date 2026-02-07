@@ -40,12 +40,16 @@ if (file_exists($envFile)) {
 }
 
 // ============================================================================
-// ERROR REPORTING
+// ERROR REPORTING & LOGGING
 // ============================================================================
 error_reporting(E_ALL);
-// Don't display errors directly - log them instead to avoid breaking JSON responses
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
+ini_set('error_log', dirname(__DIR__) . '/error.log');
+
+// Initialize custom error logger
+require_once __DIR__ . '/../app/Core/ErrorLogger.php';
+\App\Core\ErrorLogger::init();
 
 // ============================================================================
 // SESSION CONFIGURATION
