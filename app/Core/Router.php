@@ -42,13 +42,6 @@ class Router
         $method = $_SERVER['REQUEST_METHOD'];
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         
-        // Debug output for development
-        if ($_ENV['APP_DEBUG'] ?? false) {
-            error_log("Router Debug - Original URI: " . $_SERVER['REQUEST_URI']);
-            error_log("Router Debug - Parsed path: " . $path);
-            error_log("Router Debug - Script name: " . $_SERVER['SCRIPT_NAME']);
-        }
-        
         // Remove project folder from path if present
         $scriptName = dirname($_SERVER['SCRIPT_NAME']);
         if ($scriptName !== '/' && strpos($path, $scriptName) === 0) {
@@ -63,10 +56,6 @@ class Router
         // Ensure path starts with /
         if (empty($path) || $path[0] !== '/') {
             $path = '/' . $path;
-        }
-
-        if ($_ENV['APP_DEBUG'] ?? false) {
-            error_log("Router Debug - Final path: " . $path);
         }
 
         foreach ($this->routes as $route) {
