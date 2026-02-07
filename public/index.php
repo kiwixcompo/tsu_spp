@@ -7,9 +7,33 @@
 // ============================================================================
 // LOAD ENVIRONMENT VARIABLES (FIXED VERSION)
 // ============================================================================
-// Check for local environment first
-$envFile = dirname(__DIR__) . '/.env.local';
-if (!file_exists($envFile)) {
+// Detect if we're running locally or in production
+// Check multiple indicators to determine environment
+$isLocalEnvironment = (
+    // Check if running on localhost
+    (isset($_SERVER['HTTP_HOST']) && (
+        strpos($_SERVER['HTTP_HOST'], 'localhost') !== false ||
+        strpos($_SERVER['HTTP_HOST'], '127.0.0.1') !== false ||
+        strpos($_SERVER['HTTP_HOST'], '::1') !== false
+    )) ||
+    // Check if document root contains typical local paths
+    (isset($_SERVER['DOCUMENT_ROOT']) && (
+        strpos($_SERVER['DOCUMENT_ROOT'], 'xampp') !== false ||
+        strpos($_SERVER['DOCUMENT_ROOT'], 'wamp') !== false ||
+        strpos($_SERVER['DOCUMENT_ROOT'], 'mamp') !== false ||
+        strpos($_SERVER['DOCUMENT_ROOT'], 'laragon') !== false
+    ))
+);
+
+// Choose the appropriate .env file based on environment
+if ($isLocalEnvironment) {
+    // Local development - use .env.local if it exists, otherwise .env
+    $envFile = dirname(__DIR__) . '/.env.local';
+    if (!file_exists($envFile)) {
+        $envFile = dirname(__DIR__) . '/.env';
+    }
+} else {
+    // Production - always use .env
     $envFile = dirname(__DIR__) . '/.env';
 }
 
