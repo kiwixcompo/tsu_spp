@@ -44,14 +44,32 @@ class EmailHelper
             };
         }
         
+        // Server settings - Google Workspace SMTP
         $this->mailer->isSMTP();
         $this->mailer->Host = $smtpConfig['host'];
         $this->mailer->SMTPAuth = true;
         $this->mailer->Username = $smtpConfig['username'];
         $this->mailer->Password = $smtpConfig['password'];
-        $this->mailer->SMTPSecure = $smtpConfig['encryption'];
+        
+        // Use STARTTLS encryption for port 587
+        if ($smtpConfig['port'] == 587) {
+            $this->mailer->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        } else {
+            $this->mailer->SMTPSecure = $smtpConfig['encryption'];
+        }
+        
         $this->mailer->Port = $smtpConfig['port'];
-        $this->mailer->Timeout = 10;
+        
+        // SSL options for cPanel/Google Workspace compatibility
+        $this->mailer->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => false
+            )
+        );
+        
+        $this->mailer->Timeout = 30;
         $this->mailer->SMTPKeepAlive = false;
         
         $this->mailer->CharSet = 'UTF-8';
@@ -64,7 +82,7 @@ class EmailHelper
         
         $this->mailer->isHTML(true);
         
-        error_log("PHPMailer configured successfully with SMTP: " . $smtpConfig['host'] . ":" . $smtpConfig['port']);
+        error_log("PHPMailer configured successfully with Google Workspace SMTP: " . $smtpConfig['host'] . ":" . $smtpConfig['port']);
         
     } catch (\Exception $e) {
         error_log("PHPMailer setup failed: " . $e->getMessage());
