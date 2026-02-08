@@ -30,9 +30,9 @@ if (file_exists($envFile)) {
 }
 
 // Load PHPMailer
-require("vendor/phpmailer/PHPMailer/src/PHPMailer.php");
-require("vendor/phpmailer/PHPMailer/src/SMTP.php");
-require("vendor/phpmailer/PHPMailer/src/Exception.php");
+require("vendor/phpmailer/phpmailer/src/PHPMailer.php");
+require("vendor/phpmailer/phpmailer/src/SMTP.php");
+require("vendor/phpmailer/phpmailer/src/Exception.php");
 
 echo "<!DOCTYPE html><html><head><title>Google SMTP Test</title>";
 echo "<style>body{font-family:Arial,sans-serif;max-width:800px;margin:50px auto;padding:20px;}";

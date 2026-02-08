@@ -128,7 +128,7 @@ spl_autoload_register(function ($class) {
 // ============================================================================
 // LOAD PHPMAILER (OPTIONAL)
 // ============================================================================
-$phpmailerPath = __DIR__ . '/../vendor/phpmailer/PHPMailer/src';
+$phpmailerPath = __DIR__ . '/../vendor/phpmailer/phpmailer/src';
 if (file_exists($phpmailerPath . '/PHPMailer.php')) {
     require_once $phpmailerPath . '/Exception.php';
     require_once $phpmailerPath . '/PHPMailer.php';

@@ -5,6 +5,7 @@ error_log
 .vscode/
 .idea/
 node_modules/
+vendor/
 storage/qrcodes/*.png
 public/uploads/profiles/*
 !public/uploads/profiles/.gitkeep
