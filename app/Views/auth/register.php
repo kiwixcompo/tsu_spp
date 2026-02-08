@@ -98,12 +98,19 @@ if (!function_exists('url')) {
 
                             <div class="mb-3">
                                 <label for="confirm_password" class="form-label">Confirm Password</label>
-                                <input type="password" 
-                                       class="form-control form-control-lg" 
-                                       id="confirm_password" 
-                                       name="confirm_password" 
-                                       placeholder="Confirm your password"
-                                       required>
+                                <div class="input-group">
+                                    <input type="password" 
+                                           class="form-control form-control-lg" 
+                                           id="confirm_password" 
+                                           name="confirm_password" 
+                                           placeholder="Confirm your password"
+                                           required>
+                                    <button class="btn btn-outline-secondary" 
+                                            type="button" 
+                                            id="toggleConfirmPassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -279,6 +286,22 @@ if (!function_exists('url')) {
                 icon.classList.add('fa-eye-slash');
             } else {
                 password.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        // Toggle confirm password visibility
+        document.getElementById('toggleConfirmPassword').addEventListener('click', function() {
+            const confirmPassword = document.getElementById('confirm_password');
+            const icon = this.querySelector('i');
+            
+            if (confirmPassword.type === 'password') {
+                confirmPassword.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                confirmPassword.type = 'password';
                 icon.classList.remove('fa-eye-slash');
                 icon.classList.add('fa-eye');
             }
