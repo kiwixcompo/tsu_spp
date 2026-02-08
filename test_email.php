@@ -70,6 +70,61 @@ if (isset($_POST['test_email'])) {
     } else {
         echo "<h2>Sending Test Email...</h2>";
         
+        // Try multiple methods
+        $methods = [
+            'PHP mail()' => function($to, $subject, $message, $headers) {
+                return @mail($to, $subject, $message, $headers);
+            },
+            'SMTP Port 587 (TLS)' => function($to, $subject, $message, $headers) use ($mailHost, $mailUsername, $mailPassword) {
+                if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
+                    return null; // Skip if PHPMailer not available
+                }
+                try {
+                    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+                    $mail->isSMTP();
+                    $mail->Host = $mailHost;
+                    $mail->SMTPAuth = true;
+                    $mail->Username = $mailUsername;
+                    $mail->Password = $mailPassword;
+                    $mail->SMTPSecure = 'tls';
+                    $mail->Port = 587;
+                    $mail->setFrom($mailUsername, 'TSU Staff Portal');
+                    $mail->addAddress($to);
+                    $mail->Subject = $subject;
+                    $mail->Body = $message;
+                    $mail->isHTML(true);
+                    return $mail->send();
+                } catch (\Exception $e) {
+                    echo "<div class='error'>SMTP 587 Error: " . htmlspecialchars($e->getMessage()) . "</div>";
+                    return false;
+                }
+            },
+            'SMTP Port 465 (SSL)' => function($to, $subject, $message, $headers) use ($mailHost, $mailUsername, $mailPassword) {
+                if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
+                    return null;
+                }
+                try {
+                    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+                    $mail->isSMTP();
+                    $mail->Host = $mailHost;
+                    $mail->SMTPAuth = true;
+                    $mail->Username = $mailUsername;
+                    $mail->Password = $mailPassword;
+                    $mail->SMTPSecure = 'ssl';
+                    $mail->Port = 465;
+                    $mail->setFrom($mailUsername, 'TSU Staff Portal');
+                    $mail->addAddress($to);
+                    $mail->Subject = $subject;
+                    $mail->Body = $message;
+                    $mail->isHTML(true);
+                    return $mail->send();
+                } catch (\Exception $e) {
+                    echo "<div class='error'>SMTP 465 Error: " . htmlspecialchars($e->getMessage()) . "</div>";
+                    return false;
+                }
+            }
+        ];
+        
         $subject = "TSU Staff Portal - Email Test";
         $message = "
         <html>
@@ -86,17 +141,36 @@ if (isset($_POST['test_email'])) {
         $headers .= "Content-type: text/html; charset=UTF-8\r\n";
         $headers .= "From: " . $mailFrom . "\r\n";
         
-        $result = @mail($testEmail, $subject, $message, $headers);
-        
-        if ($result) {
-            echo "<div class='success'>✓ Test email sent successfully to: $testEmail</div>";
-            echo "<div class='info'>Check your inbox (and spam folder) for the test email.</div>";
-        } else {
-            echo "<div class='error'>✗ Failed to send test email</div>";
-            $lastError = error_get_last();
-            if ($lastError) {
-                echo "<div class='error'>Error: " . htmlspecialchars($lastError['message']) . "</div>";
+        $success = false;
+        foreach ($methods as $methodName => $method) {
+            echo "<div class='info'>Trying: $methodName...</div>";
+            $result = $method($testEmail, $subject, $message, $headers);
+            
+            if ($result === null) {
+                echo "<div class='warning'>⊘ $methodName not available (PHPMailer not installed)</div>";
+                continue;
             }
+            
+            if ($result) {
+                echo "<div class='success'>✓ $methodName: Email sent successfully!</div>";
+                $success = true;
+                break;
+            } else {
+                echo "<div class='error'>✗ $methodName: Failed</div>";
+            }
+        }
+        
+        if ($success) {
+            echo "<div class='success'><strong>Test email sent to: $testEmail</strong></div>";
+            echo "<div class='info'>Check your inbox and spam folder.</div>";
+        } else {
+            echo "<div class='error'><strong>All methods failed. Please check:</strong></div>";
+            echo "<ul>";
+            echo "<li>Email credentials in .env file</li>";
+            echo "<li>Email account exists in cPanel</li>";
+            echo "<li>Server firewall allows outgoing email</li>";
+            echo "<li>Contact your hosting provider</li>";
+            echo "</ul>";
         }
     }
 }
