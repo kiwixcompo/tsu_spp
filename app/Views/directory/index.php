@@ -229,7 +229,7 @@ if (!function_exists('safe_output')) {
                                         </div>
                                         <div class="flex-grow-1">
                                             <h5 class="card-title mb-1">
-                                                <?= htmlspecialchars(($profile['title'] ?? '') . ' ' . $profile['first_name'] . ' ' . $profile['last_name']) ?>
+                                                <?= htmlspecialchars(trim(($profile['title'] ?? '') . ' ' . $profile['first_name'] . ' ' . ($profile['middle_name'] ? $profile['middle_name'] . ' ' : '') . $profile['last_name'])) ?>
                                             </h5>
                                             <p class="text-muted mb-2"><?= htmlspecialchars($profile['designation'] ?? 'Staff Member') ?></p>
                                             <p class="text-muted small mb-0">

@@ -359,7 +359,18 @@ if (!function_exists('safe_output')) {
                 body: body,
                 headers: headers
             })
-            .then(response => response.json())
+            .then(response => {
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    // Response is not JSON, likely an error page
+                    return response.text().then(text => {
+                        throw new Error('Server returned non-JSON response. Check server logs.');
+                    });
+                }
+            })
             .then(data => {
                 if (data.success) {
                     showAlert('success', data.message);
@@ -414,10 +425,10 @@ if (!function_exists('safe_output')) {
             }
             
             // Change modal title and form action
-            document.querySelector('#addExperienceModal .modal-title').textContent = 'Edit Experience';
+            document.querySelector('#addExperienceModal .modal-title').textContent = 'Update Experience';
             document.getElementById('addExperienceForm').setAttribute('data-edit-id', id);
             document.getElementById('addExperienceForm').setAttribute('data-mode', 'edit');
-            document.getElementById('addExperienceBtn').innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+            document.getElementById('addExperienceBtn').innerHTML = '<i class="fas fa-save me-2"></i>Update Experience';
             
             // Show modal
             const modal = new bootstrap.Modal(document.getElementById('addExperienceModal'));

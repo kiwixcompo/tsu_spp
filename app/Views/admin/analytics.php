@@ -13,69 +13,14 @@ if (!function_exists('url')) {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .admin-sidebar {
-            background: #2c3e50;
-            min-height: 100vh;
-            padding-top: 2rem;
-        }
-        .admin-sidebar .nav-link {
-            color: #ecf0f1;
-            padding: 1rem 1.5rem;
-            border-radius: 0;
-            margin-bottom: 0.5rem;
-        }
-        .admin-sidebar .nav-link:hover,
-        .admin-sidebar .nav-link.active {
-            background: #34495e;
-            color: white;
-        }
-    </style>
+    <?php include __DIR__ . '/partials/styles.php'; ?>
 </head>
 <body class="bg-light">
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 px-0">
-                <div class="admin-sidebar">
-                    <div class="text-center mb-4">
-                        <h4 class="text-white">
-                            <i class="fas fa-shield-alt me-2"></i>Admin Panel
-                        </h4>
-                    </div>
-                    
-                    <nav class="nav flex-column">
-                        <a class="nav-link" href="<?= url('/admin/dashboard') ?>">
-                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                        </a>
-                        <a class="nav-link" href="<?= url('/admin/users') ?>">
-                            <i class="fas fa-users me-2"></i>Users Management
-                        </a>
-                        <a class="nav-link" href="<?= url('/admin/publications') ?>">
-                            <i class="fas fa-book me-2"></i>Publications
-                        </a>
-                        <a class="nav-link active" href="<?= url('/admin/analytics') ?>">
-                            <i class="fas fa-chart-line me-2"></i>Analytics
-                        </a>
-                        <a class="nav-link" href="<?= url('/admin/activity-logs') ?>">
-                            <i class="fas fa-history me-2"></i>Activity Logs
-                        </a>
-                        <a class="nav-link" href="<?= url('/admin/faculties-departments') ?>">
-                            <i class="fas fa-building me-2"></i>Faculties & Departments
-                        </a>
-                        <a class="nav-link" href="<?= url('/admin/settings') ?>">
-                            <i class="fas fa-cog me-2"></i>System Settings
-                        </a>
-                        <hr class="text-white">
-                        <a class="nav-link" href="<?= url('/logout') ?>">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
-                        </a>
-                    </nav>
-                </div>
-            </div>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <?php $currentPage = 'analytics'; include __DIR__ . '/partials/sidebar.php'; ?>
 
-            <!-- Main Content -->
-            <div class="col-md-9 col-lg-10">
+            <div class="main-content" id="mainContent">
                 <div class="p-4">
                     <h1 class="h3 mb-4">
                         <i class="fas fa-chart-line me-2"></i>Analytics & Reports
@@ -234,5 +179,6 @@ if (!function_exists('url')) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <?php include __DIR__ . '/partials/scripts.php'; ?>
 </body>
 </html>

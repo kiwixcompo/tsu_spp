@@ -367,7 +367,16 @@ if (!function_exists('escape_attr')) {
                     },
                     body: body
                 })
-                .then(response => response.json())
+                .then(response => {
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json();
+                    } else {
+                        return response.text().then(text => {
+                            throw new Error('Server returned non-JSON response. Check server logs.');
+                        });
+                    }
+                })
                 .then(handleResponse.bind(this))
                 .catch(handleError)
                 .finally(() => restoreButton(submitBtn, originalText));
@@ -380,7 +389,16 @@ if (!function_exists('escape_attr')) {
                     method: method,
                     body: body
                 })
-                .then(response => response.json())
+                .then(response => {
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json();
+                    } else {
+                        return response.text().then(text => {
+                            throw new Error('Server returned non-JSON response. Check server logs.');
+                        });
+                    }
+                })
                 .then(handleResponse.bind(this))
                 .catch(handleError)
                 .finally(() => restoreButton(submitBtn, originalText));
@@ -435,9 +453,10 @@ if (!function_exists('escape_attr')) {
             document.getElementById('description').value = educationData.description || '';
             
             // Change modal title and form action
-            document.querySelector('#addEducationModal .modal-title').textContent = 'Edit Education';
+            document.querySelector('#addEducationModal .modal-title').textContent = 'Update Education';
             document.getElementById('addEducationForm').setAttribute('data-edit-id', id);
             document.getElementById('addEducationForm').setAttribute('data-mode', 'edit');
+            document.getElementById('addEducationBtn').innerHTML = '<i class="fas fa-save me-2"></i>Update Education';
             
             // Show modal
             const modal = new bootstrap.Modal(document.getElementById('addEducationModal'));

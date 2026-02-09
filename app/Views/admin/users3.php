@@ -351,16 +351,16 @@ if (!function_exists('url')) {
                             <div style="writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; white-space: nowrap; padding: 10px 0;">STAFF ID CARD</div>
                         </div>
 
-                        <div style="text-align: center; margin-top: 10px; position: relative; z-index: 2; padding: 0 10px;">
-                            <h3 style="color: #1e3a8a; font-weight: 800; font-size: 20px; margin: 0; line-height: 1.1;">${fullName}</h3>
-                            <div style="color: #4b5563; font-size: 13px; font-weight: 600; margin-top: 3px;">${profile.designation || ''}</div>
+                        <div style="text-align: center; margin-top: 8px; position: relative; z-index: 2; padding: 0 10px;">
+                            <h3 style="color: #1e3a8a; font-weight: 800; font-size: 18px; margin: 0; line-height: 1.1;">${fullName}</h3>
+                            <div style="color: #4b5563; font-size: 12px; font-weight: 600; margin-top: 2px;">${profile.designation || ''}</div>
                         </div>
 
-                        <div style="margin-top: 12px; margin-left: 65px; margin-right: 10px; margin-bottom: 15px; position: relative; z-index: 2; font-size: 13px;">
+                        <div style="margin-top: 10px; margin-left: 65px; margin-right: 10px; position: relative; z-index: 2; font-size: 11px;">
                             <table style="width: 100%; border-collapse: collapse;">
-                                <tr><td style="font-weight: 700; color: #1e40af; width: 60px; vertical-align: top; padding-bottom: 6px;">Staff ID:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.3;">${staffId}</td></tr>
-                                <tr><td style="font-weight: 700; color: #1e40af; width: 60px; vertical-align: top; padding-bottom: 6px;">Faculty:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.3;">${profile.faculty || ''}</td></tr>
-                                <tr><td style="font-weight: 700; color: #1e40af; width: 60px; vertical-align: top; padding-bottom: 6px;">Dept:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.3;">${profile.department || ''}</td></tr>
+                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 4px;">Staff ID:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.2;">${staffId}</td></tr>
+                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 4px;">Faculty:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.2;">${profile.faculty || ''}</td></tr>
+                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 4px;">Dept:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.2;">${profile.department || ''}</td></tr>
                             </table>
                         </div>
 

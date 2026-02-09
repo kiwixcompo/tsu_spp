@@ -150,7 +150,7 @@ if (!function_exists('url')) {
         /* Name Section */
         .name-section {
             text-align: center;
-            margin-top: 10px;
+            margin-top: 8px;
             position: relative;
             z-index: 2;
             padding: 0 10px;
@@ -159,27 +159,26 @@ if (!function_exists('url')) {
         .full-name {
             color: #1e3a8a;
             font-weight: 800;
-            font-size: 20px;
+            font-size: 18px;
             margin: 0;
             line-height: 1.1;
         }
         
         .designation {
             color: #4b5563;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            margin-top: 3px;
+            margin-top: 2px;
         }
         
         /* Details Table - Optimized for space */
         .details-section {
-            margin-top: 12px;
+            margin-top: 10px;
             margin-left: 65px; /* Clear blue bar */
             margin-right: 10px;
-            margin-bottom: 15px;
             position: relative;
             z-index: 2;
-            font-size: 13px;
+            font-size: 11px; /* Smaller font to fit more text */
         }
         
         .details-table {
@@ -189,20 +188,20 @@ if (!function_exists('url')) {
         
         .details-table td {
             vertical-align: top;
-            padding-bottom: 6px;
+            padding-bottom: 4px;
         }
         
         .details-label {
             font-weight: 700;
             color: #1e40af;
-            width: 60px;
+            width: 55px;
             white-space: nowrap;
         }
         
         .details-value {
             color: #111;
             font-weight: 600;
-            line-height: 1.3;
+            line-height: 1.2;
         }
         
         /* Footer */

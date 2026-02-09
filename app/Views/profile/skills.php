@@ -323,59 +323,7 @@ if (!function_exists('escape_attr')) {
             }
         }
 
-        // Add skill form submission
-        document.getElementById('addSkillForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const submitBtn = document.getElementById('addSkillBtn');
-            const originalText = submitBtn.innerHTML;
-            
-            // Clear previous errors
-            clearFieldErrors();
-            
-            // Show loading state
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Adding...';
-            
-            // Prepare form data
-            const formData = new FormData(this);
-            
-            // Submit form
-            fetch('<?= url('profile/skills') ?>', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert('success', data.message);
-                    // Close modal and reset form
-                    bootstrap.Modal.getInstance(document.getElementById('addSkillModal')).hide();
-                    this.reset();
-                    // Reload page to show new skill
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else if (data.errors) {
-                    Object.keys(data.errors).forEach(field => {
-                        showFieldError(field, data.errors[field]);
-                    });
-                } else {
-                    showAlert('danger', data.error || 'An error occurred while adding skill.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('danger', 'An unexpected error occurred. Please try again.');
-            })
-            .finally(() => {
-                // Restore button state
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-            });
-        });
-
-        // Add skill form submission
+        // Add/Edit skill form submission
         document.getElementById('addSkillForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -430,7 +378,16 @@ if (!function_exists('escape_attr')) {
                 body: body,
                 headers: headers
             })
-            .then(response => response.json())
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    return response.text().then(text => {
+                        throw new Error('Server returned non-JSON response. Check server logs.');
+                    });
+                }
+            })
             .then(data => {
                 if (data.success) {
                     showAlert('success', data.message);
@@ -474,9 +431,10 @@ if (!function_exists('escape_attr')) {
             document.getElementById('years_experience').value = skillData.years_experience || '';
             
             // Change modal title and form action
-            document.querySelector('#addSkillModal .modal-title').textContent = 'Edit Skill';
+            document.querySelector('#addSkillModal .modal-title').textContent = 'Update Skill';
             document.getElementById('addSkillForm').setAttribute('data-edit-id', id);
             document.getElementById('addSkillForm').setAttribute('data-mode', 'edit');
+            document.querySelector('#addSkillForm .btn-primary').innerHTML = '<i class="fas fa-save me-2"></i>Update Skill';
             
             // Show modal
             const modal = new bootstrap.Modal(document.getElementById('addSkillModal'));
@@ -517,6 +475,7 @@ if (!function_exists('escape_attr')) {
             form.removeAttribute('data-mode');
             form.removeAttribute('data-edit-id');
             document.querySelector('#addSkillModal .modal-title').textContent = 'Add Skill';
+            document.querySelector('#addSkillForm .btn-primary').innerHTML = '<i class="fas fa-plus me-2"></i>Add Skill';
             clearFieldErrors();
         });
     </script>
