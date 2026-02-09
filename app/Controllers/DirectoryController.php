@@ -199,11 +199,16 @@ class DirectoryController extends Controller
                 return;
             }
 
-            // Increment profile views
-            $this->db->query(
-                "UPDATE profiles SET profile_views = profile_views + 1 WHERE id = ?",
-                [$profile['id']]
-            );
+            // Increment profile views (only if not viewing own profile)
+            $currentUser = $this->getCurrentUser();
+            $isOwnProfile = $currentUser && $currentUser['id'] === $profile['user_id'];
+            
+            if (!$isOwnProfile) {
+                $this->db->query(
+                    "UPDATE profiles SET profile_views = profile_views + 1 WHERE id = ?",
+                    [$profile['id']]
+                );
+            }
 
             // Get additional profile data
             $education = $this->db->fetchAll(

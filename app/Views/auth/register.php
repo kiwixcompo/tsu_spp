@@ -145,6 +145,38 @@ SecurityHelper::setSecurityHeaders();
                                     Use your official TSU email address
                                 </div>
                             </div>
+                            <!-- Staff Number -->
+<div class="mb-3">
+    <label class="form-label">Staff Number *</label>
+    <div class="row">
+        <div class="col-md-4">
+            <select class="form-select form-select-lg" 
+                    id="staff_prefix" 
+                    name="staff_prefix" 
+                    required>
+                <option value="">Prefix</option>
+                <option value="TSU/SP/">TSU/SP/</option>
+                <option value="TSU/JP/">TSU/JP/</option>
+            </select>
+            <div class="form-text">
+                <small>SP or JP</small>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <input type="text" 
+                   class="form-control form-control-lg" 
+                   id="staff_number" 
+                   name="staff_number" 
+                   placeholder="Enter staff number (numbers only)"
+                   pattern="[0-9]+"
+                   title="Please enter numbers only"
+                   required>
+            <div class="form-text">
+                <small>Example: For TSU/SP/654, enter 654</small>
+            </div>
+        </div>
+    </div>
+</div>
 
                             <!-- Password -->
                             <div class="row">
@@ -639,13 +671,14 @@ SecurityHelper::setSecurityHeaders();
             }
         });
 
-        // Form validation
+        // Form validation and submission
         document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+            
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirm_password').value;
             
             if (password !== confirmPassword) {
-                e.preventDefault();
                 alert('Passwords do not match!');
                 return false;
             }
@@ -658,7 +691,6 @@ SecurityHelper::setSecurityHeaders();
                 const department = document.getElementById('department').value;
                 
                 if (!faculty || !department) {
-                    e.preventDefault();
                     alert('Please select both faculty and department for teaching staff.');
                     return false;
                 }
@@ -670,7 +702,6 @@ SecurityHelper::setSecurityHeaders();
                 
                 // Check if neither option is selected
                 if (!unit && !faculty && !department) {
-                    e.preventDefault();
                     document.getElementById('non-teaching-error').style.display = 'block';
                     alert('Non-teaching staff must select either a Unit/Office OR a Faculty/Department.');
                     return false;
@@ -678,11 +709,104 @@ SecurityHelper::setSecurityHeaders();
                 
                 // If faculty is selected, department must also be selected
                 if (faculty && !department) {
-                    e.preventDefault();
                     alert('Please select a department for the selected faculty.');
                     return false;
                 }
             }
+            
+            // All validations passed, submit via AJAX
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
+            
+            const formData = new FormData(this);
+            
+            fetch('<?= url('register') ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Success!</strong> ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    
+                    // Insert alert at top of form
+                    const form = document.getElementById('registerForm');
+                    form.insertBefore(alertDiv, form.firstChild);
+                    
+                    // Scroll to top
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    // Redirect after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = data.redirect;
+                    }, 2000);
+                } else if (data.errors) {
+                    // Show validation errors
+                    let errorMessage = '<ul class="mb-0">';
+                    for (const [field, message] of Object.entries(data.errors)) {
+                        errorMessage += `<li>${message}</li>`;
+                    }
+                    errorMessage += '</ul>';
+                    
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Validation Error:</strong>
+                        ${errorMessage}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    
+                    const form = document.getElementById('registerForm');
+                    form.insertBefore(alertDiv, form.firstChild);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                } else {
+                    // Show generic error
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Error:</strong> ${data.error || 'Registration failed. Please try again.'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    
+                    const form = document.getElementById('registerForm');
+                    form.insertBefore(alertDiv, form.firstChild);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Error:</strong> An unexpected error occurred. Please try again.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                const form = document.getElementById('registerForm');
+                form.insertBefore(alertDiv, form.firstChild);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            });
         });
     </script>
 </body>

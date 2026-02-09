@@ -9,7 +9,7 @@ if (!function_exists('url')) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ID Card - <?= htmlspecialchars($profile['first_name'] . ' ' . $profile['last_name']) ?></title>
+    <title>ID Card - <?= htmlspecialchars(trim(($profile['first_name'] ?? '') . ' ' . ($profile['middle_name'] ?? '') . ' ' . ($profile['last_name'] ?? ''))) ?></title>
     <link rel="icon" type="image/png" href="<?= asset('assets/images/tsu-logo.png') ?>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -137,14 +137,15 @@ if (!function_exists('url')) {
         }
         
         .vertical-text {
-            writing-mode: vertical-rl;
-            transform: rotate(180deg);
+            writing-mode: vertical-lr; /* Changed from vertical-rl to vertical-lr */
+            transform: none; /* Removed rotation */
             font-weight: 700;
             letter-spacing: 2px;
             text-transform: uppercase;
             font-size: 13px;
             white-space: nowrap;
             padding: 10px 0;
+            color: white; /* Ensure text is white for visibility */
         }
         
         /* Name Section */
@@ -253,13 +254,14 @@ if (!function_exists('url')) {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            justify-content: flex-start; /* Changed from center to flex-start */
+            padding: 30px 20px 20px; /* Increased top padding */
             text-align: center;
         }
         
         .qr-container {
-            margin-bottom: 15px;
+            margin-top: 20px; /* Added top margin to push down */
+            margin-bottom: 20px; /* Increased bottom margin */
             text-align: center;
         }
         
@@ -267,7 +269,7 @@ if (!function_exists('url')) {
             font-size: 12px;
             color: #1e40af;
             font-weight: 700;
-            margin-bottom: 5px;
+            margin-bottom: 8px; /* Increased spacing */
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -286,7 +288,7 @@ if (!function_exists('url')) {
             border: 2px solid #dc2626;
             border-radius: 8px;
             padding: 4px 20px;
-            margin-bottom: 15px; /* Adjusted spacing */
+            margin-bottom: 20px; /* Increased spacing */
             background: rgba(255,255,255,0.95);
             min-width: 120px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -400,7 +402,13 @@ if (!function_exists('url')) {
                             <div class="name-section">
                                 <h3 class="full-name">
                                     <?php
-                                    $fullName = ($profile['title'] ?? '') . ' ' . ($profile['first_name'] ?? '') . ' ' . ($profile['last_name'] ?? '');
+                                    $nameParts = array_filter([
+                                        $profile['title'] ?? '',
+                                        $profile['first_name'] ?? '',
+                                        $profile['middle_name'] ?? '',
+                                        $profile['last_name'] ?? ''
+                                    ]);
+                                    $fullName = implode(' ', $nameParts);
                                     echo htmlspecialchars(trim($fullName));
                                     ?>
                                 </h3>
@@ -518,7 +526,7 @@ if (!function_exists('url')) {
                 pdf.addImage(backImg, 'JPEG', 0, 0, 54, 85.6);
                 
                 // Save
-                const staffName = '<?= htmlspecialchars($profile['first_name'] . '_' . $profile['last_name']) ?>';
+                const staffName = '<?= htmlspecialchars(trim(($profile['first_name'] ?? '') . '_' . ($profile['middle_name'] ?? '') . '_' . ($profile['last_name'] ?? ''))) ?>';
                 pdf.save(`ID_Card_${staffName}.pdf`);
             } catch (error) {
                 console.error('Error generating PDF:', error);

@@ -116,22 +116,6 @@ class AuthController extends Controller
             $errors['email_prefix'] = 'This email is already registered';
         }
 
-        // Check if staff number already exists (prefix + number combination must be unique)
-        if (!empty($staffPrefix) && !empty($staffNumber)) {
-            $fullStaffNumber = $staffPrefix . $staffNumber;
-            try {
-                $existingStaff = $this->db->fetch(
-                    "SELECT id FROM profiles WHERE staff_number = ?",
-                    [$fullStaffNumber]
-                );
-                if ($existingStaff) {
-                    $errors['staff_number'] = 'This staff number is already registered';
-                }
-            } catch (\Exception $e) {
-                error_log("Staff number check failed: " . $e->getMessage());
-            }
-        }
-
         if (!empty($errors)) {
             $this->json(['errors' => $errors], 422);
             return;

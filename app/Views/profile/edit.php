@@ -134,21 +134,82 @@ if (!function_exists('escape_html')) { require_once __DIR__ . '/../../Helpers/Te
                                         </select>
                                     </div>
                                 </div>
+                                
+                                <!-- Staff Type Selection -->
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Faculty</label>
-                                        <select class="form-select" id="faculty" name="faculty" required>
-                                            <option value="">Select</option>
-                                            <?php foreach ($faculties as $f): ?>
-                                                <option value="<?=htmlspecialchars($f['name'])?>" <?=($profile['faculty']??'')===$f['name']?'selected':''?>><?=htmlspecialchars($f['name'])?></option>
-                                            <?php endforeach; ?>
+                                        <label class="form-label">Staff Type *</label>
+                                        <select class="form-select" id="staff_type" name="staff_type" required>
+                                            <option value="teaching" <?=($profile['staff_type']??'teaching')==='teaching'?'selected':''?>>Teaching Staff</option>
+                                            <option value="non-teaching" <?=($profile['staff_type']??'')==='non-teaching'?'selected':''?>>Non-Teaching Staff</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Department</label>
-                                        <select class="form-select" id="department" name="department" required><option value="">Select Department</option></select>
+                                        <label class="form-label">Profile Visibility *</label>
+                                        <select class="form-select" name="profile_visibility" required>
+                                            <option value="public" <?=($profile['profile_visibility']??'public')==='public'?'selected':''?>>Public (Visible in Directory)</option>
+                                            <option value="private" <?=($profile['profile_visibility']??'')==='private'?'selected':''?>>Private (Hidden from Directory)</option>
+                                        </select>
                                     </div>
                                 </div>
+
+                                <!-- Teaching Staff Fields -->
+                                <div id="teaching_fields" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Faculty *</label>
+                                            <select class="form-select" id="faculty_teaching" name="faculty">
+                                                <option value="">Select Faculty</option>
+                                                <?php foreach ($faculties as $f): ?>
+                                                    <option value="<?=htmlspecialchars($f['name'])?>" <?=($profile['faculty']??'')===$f['name']?'selected':''?>><?=htmlspecialchars($f['name'])?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Department *</label>
+                                            <select class="form-select" id="department_teaching" name="department">
+                                                <option value="">Select Department</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Non-Teaching Staff Fields -->
+                                <div id="non_teaching_fields" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>Select <strong>either</strong> a Unit/Office <strong>OR</strong> Faculty/Department (not both)
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label">Unit/Office/Directorate</label>
+                                            <select class="form-select" id="unit" name="unit">
+                                                <option value="">Select Unit/Office (Optional)</option>
+                                                <?php foreach ($units as $unit): ?>
+                                                    <option value="<?=htmlspecialchars($unit)?>" <?=($profile['unit']??'')===$unit?'selected':''?>><?=htmlspecialchars($unit)?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="text-center mb-3"><strong>OR</strong></div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Faculty</label>
+                                            <select class="form-select" id="faculty_nt" name="faculty_nt">
+                                                <option value="">Select Faculty (Optional)</option>
+                                                <?php foreach ($faculties as $f): ?>
+                                                    <option value="<?=htmlspecialchars($f['name'])?>" <?=($profile['faculty']??'')===$f['name']?'selected':''?>><?=htmlspecialchars($f['name'])?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Department</label>
+                                            <select class="form-select" id="department_nt" name="department_nt">
+                                                <option value="">Select Department (Optional)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="row">
                                     <div class="col-md-6 mb-3"><label class="form-label">Office Location</label><input type="text" class="form-control" name="office_location" value="<?=htmlspecialchars($profile['office_location']??'')?>"></div>
                                     <div class="col-md-6 mb-3"><label class="form-label">Office Phone</label><input type="tel" class="form-control" name="office_phone" value="<?=htmlspecialchars($profile['office_phone']??'')?>"></div>
@@ -182,9 +243,11 @@ if (!function_exists('escape_html')) { require_once __DIR__ . '/../../Helpers/Te
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const facultiesData = <?= json_encode($faculties) ?>;
+        const currentStaffType = <?= json_encode($profile['staff_type'] ?? 'teaching') ?>;
+        const currentDepartment = <?= json_encode($profile['department'] ?? '') ?>;
         
-        function populateDepartments(selectedFaculty, selectedDepartment = '') {
-            const departmentSelect = document.getElementById('department');
+        function populateDepartments(facultySelectId, departmentSelectId, selectedFaculty, selectedDepartment = '') {
+            const departmentSelect = document.getElementById(departmentSelectId);
             departmentSelect.innerHTML = '<option value="">Select Department</option>';
             const faculty = facultiesData.find(f => f.name === selectedFaculty);
             if (faculty && faculty.departments) {
@@ -198,14 +261,79 @@ if (!function_exists('escape_html')) { require_once __DIR__ . '/../../Helpers/Te
             }
         }
 
+        function toggleStaffTypeFields() {
+            const staffType = document.getElementById('staff_type').value;
+            const teachingFields = document.getElementById('teaching_fields');
+            const nonTeachingFields = document.getElementById('non_teaching_fields');
+            
+            if (staffType === 'teaching') {
+                teachingFields.style.display = 'block';
+                nonTeachingFields.style.display = 'none';
+                
+                // Make teaching fields required
+                document.getElementById('faculty_teaching').required = true;
+                document.getElementById('department_teaching').required = true;
+                
+                // Make non-teaching fields optional
+                document.getElementById('unit').required = false;
+                document.getElementById('faculty_nt').required = false;
+                document.getElementById('department_nt').required = false;
+            } else {
+                teachingFields.style.display = 'none';
+                nonTeachingFields.style.display = 'block';
+                
+                // Make teaching fields optional
+                document.getElementById('faculty_teaching').required = false;
+                document.getElementById('department_teaching').required = false;
+                
+                // Non-teaching fields are conditionally required (handled by backend)
+                document.getElementById('unit').required = false;
+                document.getElementById('faculty_nt').required = false;
+                document.getElementById('department_nt').required = false;
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            const facultySelect = document.getElementById('faculty');
-            const selectedDepartment = <?= json_encode($profile['department'] ?? '', JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-            if (facultySelect.value) populateDepartments(facultySelect.value, selectedDepartment);
+            // Initialize staff type fields
+            toggleStaffTypeFields();
+            
+            // Populate departments for teaching staff
+            const facultyTeaching = document.getElementById('faculty_teaching');
+            if (facultyTeaching.value) {
+                populateDepartments('faculty_teaching', 'department_teaching', facultyTeaching.value, currentDepartment);
+            }
+            
+            // Populate departments for non-teaching staff
+            const facultyNT = document.getElementById('faculty_nt');
+            if (facultyNT.value) {
+                populateDepartments('faculty_nt', 'department_nt', facultyNT.value, currentDepartment);
+            }
         });
 
-        document.getElementById('faculty').addEventListener('change', function() {
-            populateDepartments(this.value);
+        // Staff type change handler
+        document.getElementById('staff_type').addEventListener('change', toggleStaffTypeFields);
+
+        // Faculty change handlers
+        document.getElementById('faculty_teaching').addEventListener('change', function() {
+            populateDepartments('faculty_teaching', 'department_teaching', this.value);
+        });
+
+        document.getElementById('faculty_nt').addEventListener('change', function() {
+            populateDepartments('faculty_nt', 'department_nt', this.value);
+        });
+
+        // Auto-clear logic for non-teaching staff
+        document.getElementById('unit').addEventListener('change', function() {
+            if (this.value) {
+                document.getElementById('faculty_nt').value = '';
+                document.getElementById('department_nt').value = '';
+            }
+        });
+
+        document.getElementById('faculty_nt').addEventListener('change', function() {
+            if (this.value) {
+                document.getElementById('unit').value = '';
+            }
         });
 
         document.getElementById('profileForm').addEventListener('submit', function(e) {
@@ -214,7 +342,39 @@ if (!function_exists('escape_html')) { require_once __DIR__ . '/../../Helpers/Te
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
             
-            fetch('<?= url('profile/update') ?>', { method: 'POST', body: new FormData(this) })
+            // Prepare form data based on staff type
+            const formData = new FormData(this);
+            const staffType = document.getElementById('staff_type').value;
+            
+            if (staffType === 'teaching') {
+                // Use teaching fields
+                const faculty = document.getElementById('faculty_teaching').value;
+                const department = document.getElementById('department_teaching').value;
+                formData.set('faculty', faculty);
+                formData.set('department', department);
+                formData.delete('faculty_nt');
+                formData.delete('department_nt');
+                formData.delete('unit');
+            } else {
+                // Use non-teaching fields
+                const unit = document.getElementById('unit').value;
+                const facultyNT = document.getElementById('faculty_nt').value;
+                const departmentNT = document.getElementById('department_nt').value;
+                
+                if (unit) {
+                    formData.set('unit', unit);
+                    formData.delete('faculty');
+                    formData.delete('department');
+                } else {
+                    formData.set('faculty', facultyNT);
+                    formData.set('department', departmentNT);
+                    formData.delete('unit');
+                }
+                formData.delete('faculty_nt');
+                formData.delete('department_nt');
+            }
+            
+            fetch('<?= url('profile/update') ?>', { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
                 const alertContainer = document.getElementById('alert-container');

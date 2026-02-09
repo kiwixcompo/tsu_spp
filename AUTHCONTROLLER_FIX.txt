@@ -1,0 +1,198 @@
+================================================================================
+AUTHCONTROLLER FIX - Conditional Validation for Staff Types
+================================================================================
+
+ISSUE FIXED:
+============
+Non-teaching staff were getting validation errors requiring faculty and 
+department, even though they should be able to select either Unit OR 
+Faculty/Department.
+
+SOLUTION:
+=========
+Updated AuthController register() method to use conditional validation based
+on staff_type.
+
+================================================================================
+CHANGES MADE IN: app/Controllers/AuthController.php
+================================================================================
+
+1. CONDITIONAL VALIDATION LOGIC
+   - Teaching Staff: Faculty + Department REQUIRED
+   - Non-Teaching Staff: Unit OR (Faculty + Department) REQUIRED
+
+2. FIELD NAME HANDLING
+   - Teaching staff uses: 'faculty', 'department'
+   - Non-teaching staff uses: 'faculty_nt', 'department_nt', 'unit'
+
+3. NEW FIELDS CAPTURED
+   - staff_type (teaching/non-teaching)
+   - unit (for non-teaching staff)
+   - profile_visibility (public/private)
+
+4. SESSION DATA UPDATED
+   Stores all registration data for profile setup:
+   - staff_type
+   - faculty
+   - department
+   - unit
+   - staff_number (combined prefix + number)
+   - profile_visibility
+
+================================================================================
+VALIDATION RULES
+================================================================================
+
+COMMON (All Staff):
+-------------------
+✅ email_prefix: Required, 3+ chars, alphanumeric with dots/hyphens
+✅ password: Required
+✅ confirm_password: Must match password
+✅ staff_prefix: Must be 'TSU/SP/' or 'TSU/JP/'
+✅ staff_number: Required, numbers only
+✅ staff_type: Required (teaching/non-teaching)
+
+TEACHING STAFF:
+---------------
+✅ faculty: REQUIRED
+✅ department: REQUIRED
+❌ unit: Not applicable
+
+NON-TEACHING STAFF:
+-------------------
+Option A (Unit):
+✅ unit: Selected
+❌ faculty: Empty
+❌ department: Empty
+
+Option B (Faculty + Department):
+❌ unit: Empty
+✅ faculty: Selected
+✅ department: Selected
+
+INVALID:
+❌ Nothing selected → Error: "Please select either Unit/Office OR Faculty/Department"
+❌ Faculty selected but no department → Error: "Please select a department"
+
+================================================================================
+ERROR MESSAGES
+================================================================================
+
+Common Errors:
+- email_prefix: "Email prefix is required (minimum 3 characters)"
+- email_prefix: "Email prefix can only contain letters, numbers, dots, and hyphens"
+- password: "Password is required"
+- confirm_password: "Passwords do not match"
+- staff_prefix: "Please select a valid staff ID prefix (TSU/SP/ or TSU/JP/)"
+- staff_number: "Staff number should contain numbers only"
+- email_prefix: "This email is already registered"
+
+Teaching Staff Errors:
+- faculty: "Faculty is required for teaching staff"
+- department: "Department is required for teaching staff"
+
+Non-Teaching Staff Errors:
+- staff_location: "Please select either a Unit/Office OR Faculty/Department"
+- department: "Please select a department for the selected faculty"
+
+================================================================================
+DATA FLOW
+================================================================================
+
+1. User fills registration form
+2. Selects staff type (teaching/non-teaching)
+3. Form shows appropriate fields
+4. User submits form
+5. AuthController validates based on staff_type
+6. If valid, creates user account
+7. Stores registration data in session
+8. Sends verification email
+9. User verifies email
+10. ProfileController uses session data to create profile
+
+================================================================================
+SESSION DATA STRUCTURE
+================================================================================
+
+$_SESSION['registration_data'] = [
+    'staff_type' => 'teaching' or 'non-teaching',
+    'faculty' => 'Faculty name' or null,
+    'department' => 'Department name' or null,
+    'unit' => 'Unit name' or null,
+    'staff_number' => 'TSU/SP/654' or 'TSU/JP/123',
+    'profile_visibility' => 'public' or 'private',
+];
+
+================================================================================
+TESTING SCENARIOS
+================================================================================
+
+Test 1: Teaching Staff Registration
+[ ] Select "Teaching Staff"
+[ ] Enter email, password, staff number
+[ ] Select faculty
+[ ] Select department
+[ ] Submit form
+[ ] Should succeed without errors
+
+Test 2: Non-Teaching Staff (Unit)
+[ ] Select "Non-Teaching Staff"
+[ ] Enter email, password, staff number
+[ ] Select unit
+[ ] Leave faculty/department empty
+[ ] Submit form
+[ ] Should succeed without errors
+
+Test 3: Non-Teaching Staff (Department)
+[ ] Select "Non-Teaching Staff"
+[ ] Enter email, password, staff number
+[ ] Leave unit empty
+[ ] Select faculty
+[ ] Select department
+[ ] Submit form
+[ ] Should succeed without errors
+
+Test 4: Non-Teaching Staff (Nothing Selected)
+[ ] Select "Non-Teaching Staff"
+[ ] Enter email, password, staff number
+[ ] Leave unit, faculty, department empty
+[ ] Submit form
+[ ] Should show error: "Please select either Unit/Office OR Faculty/Department"
+
+Test 5: Non-Teaching Staff (Faculty but no Department)
+[ ] Select "Non-Teaching Staff"
+[ ] Enter email, password, staff number
+[ ] Select faculty
+[ ] Leave department empty
+[ ] Submit form
+[ ] Should show error: "Please select a department for the selected faculty"
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. ✅ AuthController updated with conditional validation
+2. ⏳ ProfileController needs update to save staff_type, unit, profile_visibility
+3. ⏳ Profile edit page needs staff type switching capability
+4. ⏳ Directory controller needs to filter by profile_visibility
+
+================================================================================
+FILES MODIFIED
+================================================================================
+
+✅ app/Controllers/AuthController.php
+   - register() method updated
+   - Conditional validation added
+   - Session data structure updated
+
+================================================================================
+READY TO TEST
+================================================================================
+
+The AuthController is now ready to handle both teaching and non-teaching
+staff registrations with proper conditional validation.
+
+Upload the updated AuthController.php and test registration for both
+staff types.
+
+================================================================================

@@ -31,7 +31,7 @@ class IDCardController extends Controller
                 SELECT u.id, u.email, 
                        p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
                        p.designation, p.faculty, p.department, p.profile_photo, 
-                       p.profile_slug, p.qr_code_path, p.staff_number
+                       p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
                 FROM users u
                 INNER JOIN profiles p ON u.id = p.user_id
                 WHERE u.account_status = 'active'
@@ -63,7 +63,7 @@ class IDCardController extends Controller
             SELECT u.id, u.email, 
                    p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
                    p.designation, p.faculty, p.department, p.profile_photo, 
-                   p.profile_slug, p.qr_code_path, p.staff_number
+                   p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
             FROM users u
             INNER JOIN profiles p ON u.id = p.user_id
             WHERE u.id = ?
@@ -108,7 +108,7 @@ class IDCardController extends Controller
             SELECT u.id, u.email, 
                    p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
                    p.designation, p.faculty, p.department, p.profile_photo, 
-                   p.profile_slug, p.qr_code_path, p.staff_number
+                   p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
             FROM users u
             INNER JOIN profiles p ON u.id = p.user_id
             WHERE u.id = ?
@@ -123,7 +123,7 @@ class IDCardController extends Controller
         $qrCodeUrl = $this->ensureQRCodeExists($userId, $profile['profile_slug'], $profile['qr_code_path']);
 
         // Decode HTML entities for proper display on ID card
-        $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'designation', 'staff_number', 'email'];
+        $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'designation', 'staff_number', 'email', 'blood_group'];
         foreach ($textFields as $field) {
             if (isset($profile[$field])) {
                 $profile[$field] = html_entity_decode($profile[$field], ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -256,7 +256,7 @@ class IDCardController extends Controller
             SELECT u.id, u.email, 
                    p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
                    p.designation, p.faculty, p.department, p.profile_photo, 
-                   p.profile_slug, p.qr_code_path, p.staff_number
+                   p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
             FROM users u
             INNER JOIN profiles p ON u.id = p.user_id
             WHERE u.id IN ($placeholders)
@@ -276,7 +276,7 @@ class IDCardController extends Controller
             $qrCodeUrl = $this->ensureQRCodeExists($userId, $profile['profile_slug'], $profile['qr_code_path']);
 
             // Decode HTML entities for safe display
-            $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'designation', 'staff_number', 'email'];
+            $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'designation', 'staff_number', 'email', 'blood_group'];
             foreach ($textFields as $field) {
                 if (isset($profile[$field])) {
                     $profile[$field] = html_entity_decode($profile[$field], ENT_QUOTES | ENT_HTML5, 'UTF-8');

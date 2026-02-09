@@ -80,6 +80,23 @@ class ProfileController extends Controller
     }
 
     /**
+     * Get all units/offices
+     */
+    private function getUnits(): array
+    {
+        if (!$this->db) {
+            return [];
+        }
+
+        try {
+            $stmt = $this->db->query("SELECT unit_name FROM units_offices ORDER BY unit_name");
+            return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
      * API endpoint for faculties
      */
     public function getFaculties(): void
@@ -193,12 +210,14 @@ class ProfileController extends Controller
             $profileData = [
                 'user_id' => $user['id'],
                 'staff_number' => $combinedStaffNumber,
+                'staff_type' => $registrationData['staff_type'] ?? 'teaching',
                 'title' => $this->sanitizeInput($this->input('title')),
                 'first_name' => $firstName,
                 'middle_name' => $this->sanitizeInput($this->input('middle_name')),
                 'last_name' => $lastName,
                 'faculty' => $registrationData['faculty'] ?? '',
                 'department' => $registrationData['department'] ?? '',
+                'unit' => $registrationData['unit'] ?? null,
                 'designation' => $this->sanitizeInput($this->input('designation')),
                 'blood_group' => $this->sanitizeInput($this->input('blood_group')),
                 'office_location' => $this->sanitizeInput($this->input('office_location')),
@@ -206,7 +225,7 @@ class ProfileController extends Controller
                 'professional_summary' => $this->sanitizeInput($this->input('professional_summary')),
                 'research_interests' => $this->sanitizeInput($this->input('research_interests')),
                 'expertise_keywords' => $this->sanitizeInput($this->input('expertise_keywords')),
-                'profile_visibility' => $this->sanitizeInput($this->input('profile_visibility')) ?: 'public',
+                'profile_visibility' => $registrationData['profile_visibility'] ?? 'public',
                 'allow_contact' => $this->input('allow_contact') ? 1 : 0,
                 'profile_slug' => $profileSlug,
             ];
@@ -328,13 +347,15 @@ class ProfileController extends Controller
             return;
         }
 
-        // Get faculties and departments
+        // Get faculties, departments, and units
         $faculties = $this->getFacultiesWithDepartments();
+        $units = $this->getUnits();
 
         $this->view('profile/edit', [
             'csrf_token' => $this->generateCSRFToken(),
             'profile' => $profile,
             'faculties' => $faculties,
+            'units' => $units,
         ]);
     }
 
@@ -360,18 +381,45 @@ class ProfileController extends Controller
             return;
         }
 
-        $errors = $this->validate([
+        // Get staff type for conditional validation
+        $staffType = $this->sanitizeInput($this->input('staff_type')) ?: ($profile['staff_type'] ?? 'teaching');
+        
+        // Base validation rules
+        $validationRules = [
             'title' => 'required',
             'designation' => 'required|max:255',
-            'department' => 'required|max:255',
-            'faculty' => 'required|max:255',
             'blood_group' => 'required',
             'office_location' => 'max:100',
             'office_phone' => 'max:20',
             'professional_summary' => 'max:1000',
             'research_interests' => 'max:500',
             'expertise_keywords' => 'max:500',
-        ]);
+        ];
+
+        // Conditional validation based on staff type
+        if ($staffType === 'teaching') {
+            $validationRules['faculty'] = 'required|max:255';
+            $validationRules['department'] = 'required|max:255';
+        }
+
+        $errors = $this->validate($validationRules);
+
+        // Additional validation for non-teaching staff
+        if ($staffType === 'non-teaching') {
+            $unit = $this->sanitizeInput($this->input('unit'));
+            $faculty = $this->sanitizeInput($this->input('faculty'));
+            $department = $this->sanitizeInput($this->input('department'));
+            
+            // Must have either unit OR (faculty + department)
+            if (empty($unit) && empty($faculty) && empty($department)) {
+                $errors['staff_location'] = 'Please select either a Unit/Office OR Faculty/Department';
+            }
+            
+            // If faculty selected, department must also be selected
+            if (!empty($faculty) && empty($department)) {
+                $errors['department'] = 'Please select a department for the selected faculty';
+            }
+        }
 
         if (!empty($errors)) {
             $this->json(['errors' => $errors], 422);
@@ -388,23 +436,63 @@ class ProfileController extends Controller
                 ? $staffPrefix . $staffNumber 
                 : $profile['staff_number'];
 
+            // Check if staff number is being changed and if new number already exists
+            if ($fullStaffNumber !== $profile['staff_number']) {
+                try {
+                    $existingStaff = $this->db->fetch(
+                        "SELECT id FROM profiles WHERE staff_number = ? AND user_id != ?",
+                        [$fullStaffNumber, $user['id']]
+                    );
+                    if ($existingStaff) {
+                        $this->json(['error' => 'This staff number is already registered to another user'], 422);
+                        return;
+                    }
+                } catch (\Exception $e) {
+                    error_log("Staff number check failed: " . $e->getMessage());
+                }
+            }
+
             $updateData = [
                 'first_name' => $this->sanitizeInput($this->input('first_name')),
                 'middle_name' => $this->sanitizeInput($this->input('middle_name')),
                 'last_name' => $this->sanitizeInput($this->input('last_name')),
                 'staff_number' => $fullStaffNumber,
+                'staff_type' => $staffType,
                 'title' => $this->sanitizeInput($this->input('title')),
                 'designation' => $this->sanitizeInput($this->input('designation')),
                 'blood_group' => $this->sanitizeInput($this->input('blood_group')),
-                'department' => $this->sanitizeInput($this->input('department')),
-                'faculty' => $this->sanitizeInput($this->input('faculty')),
                 'office_location' => $this->sanitizeInput($this->input('office_location')),
                 'office_phone' => $this->sanitizeInput($this->input('office_phone')),
                 'professional_summary' => $this->sanitizeInput($this->input('professional_summary')),
                 'research_interests' => $this->sanitizeInput($this->input('research_interests')),
                 'expertise_keywords' => $this->sanitizeInput($this->input('expertise_keywords')),
+                'profile_visibility' => $this->sanitizeInput($this->input('profile_visibility')) ?: 'public',
                 'updated_at' => date('Y-m-d H:i:s'),
             ];
+
+            // Handle staff type specific fields
+            if ($staffType === 'teaching') {
+                $updateData['faculty'] = $this->sanitizeInput($this->input('faculty'));
+                $updateData['department'] = $this->sanitizeInput($this->input('department'));
+                $updateData['unit'] = null;
+            } else {
+                // Non-teaching staff
+                $unit = $this->sanitizeInput($this->input('unit'));
+                $faculty = $this->sanitizeInput($this->input('faculty'));
+                $department = $this->sanitizeInput($this->input('department'));
+                
+                if (!empty($unit)) {
+                    // Unit selected, clear faculty/department
+                    $updateData['unit'] = $unit;
+                    $updateData['faculty'] = null;
+                    $updateData['department'] = null;
+                } else {
+                    // Faculty/Department selected, clear unit
+                    $updateData['unit'] = null;
+                    $updateData['faculty'] = $faculty;
+                    $updateData['department'] = $department;
+                }
+            }
 
             // Handle profile photo upload
             if (isset($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
@@ -527,6 +615,410 @@ class ProfileController extends Controller
             return ['success' => true, 'filename' => $filename];
         } else {
             return ['success' => false, 'error' => 'Failed to upload file'];
+        }
+    }
+
+    // Education Management
+    public function showEducation(): void
+    {
+        $this->requireAuth();
+        $user = $this->getCurrentUser();
+        
+        $education = [];
+        if ($this->db) {
+            try {
+                $education = $this->db->fetchAll(
+                    "SELECT * FROM education WHERE user_id = ? ORDER BY end_year DESC, start_year DESC",
+                    [$user['id']]
+                );
+            } catch (\Exception $e) {
+                error_log("Education fetch error: " . $e->getMessage());
+            }
+        }
+
+        $this->view('profile/education', [
+            'csrf_token' => $this->generateCSRFToken(),
+            'education' => $education,
+        ]);
+    }
+
+    public function addEducation(): void
+    {
+        $this->requireAuth();
+        
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $user = $this->getCurrentUser();
+        
+        try {
+            $data = [
+                'user_id' => $user['id'],
+                'institution' => $this->sanitizeInput($this->input('institution')),
+                'degree' => $this->sanitizeInput($this->input('degree')),
+                'field_of_study' => $this->sanitizeInput($this->input('field_of_study')),
+                'start_year' => $this->sanitizeInput($this->input('start_year')),
+                'end_year' => $this->sanitizeInput($this->input('end_year')),
+                'description' => $this->sanitizeInput($this->input('description')),
+            ];
+
+            $this->db->insert('education', $data);
+            $this->json(['success' => true, 'message' => 'Education added successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to add education'], 500);
+        }
+    }
+
+    public function updateEducation(int $id): void
+    {
+        $this->requireAuth();
+        
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $user = $this->getCurrentUser();
+        
+        try {
+            $data = [
+                'institution' => $this->sanitizeInput($this->input('institution')),
+                'degree' => $this->sanitizeInput($this->input('degree')),
+                'field_of_study' => $this->sanitizeInput($this->input('field_of_study')),
+                'start_year' => $this->sanitizeInput($this->input('start_year')),
+                'end_year' => $this->sanitizeInput($this->input('end_year')),
+                'description' => $this->sanitizeInput($this->input('description')),
+            ];
+
+            $this->db->update('education', $data, 'id = ? AND user_id = ?', [$id, $user['id']]);
+            $this->json(['success' => true, 'message' => 'Education updated successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to update education'], 500);
+        }
+    }
+
+    public function deleteEducation(int $id): void
+    {
+        $this->requireAuth();
+        
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $user = $this->getCurrentUser();
+        
+        try {
+            $this->db->delete('education', 'id = ? AND user_id = ?', [$id, $user['id']]);
+            $this->json(['success' => true, 'message' => 'Education deleted successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to delete education'], 500);
+        }
+    }
+
+    // Experience Management
+    public function showExperience(): void
+    {
+        $this->requireAuth();
+        $user = $this->getCurrentUser();
+        
+        $experience = [];
+        if ($this->db) {
+            try {
+                $experience = $this->db->fetchAll(
+                    "SELECT * FROM experience WHERE user_id = ? ORDER BY end_date DESC, start_date DESC",
+                    [$user['id']]
+                );
+            } catch (\Exception $e) {
+                error_log("Experience fetch error: " . $e->getMessage());
+            }
+        }
+
+        $this->view('profile/experience', [
+            'csrf_token' => $this->generateCSRFToken(),
+            'experience' => $experience,
+        ]);
+    }
+
+    public function addExperience(): void
+    {
+        $this->requireAuth();
+        
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $user = $this->getCurrentUser();
+        
+        try {
+            $data = [
+                'user_id' => $user['id'],
+                'job_title' => $this->sanitizeInput($this->input('job_title')),
+                'company' => $this->sanitizeInput($this->input('company')),
+                'location' => $this->sanitizeInput($this->input('location')),
+                'start_date' => $this->sanitizeInput($this->input('start_date')),
+                'end_date' => $this->sanitizeInput($this->input('end_date')),
+                'description' => $this->sanitizeInput($this->input('description')),
+                'is_current' => $this->input('is_current') ? 1 : 0,
+            ];
+
+            $this->db->insert('experience', $data);
+            $this->json(['success' => true, 'message' => 'Experience added successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to add experience'], 500);
+        }
+    }
+
+    public function updateExperience(int $id): void
+    {
+        $this->requireAuth();
+        
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $user = $this->getCurrentUser();
+        
+        try {
+            $data = [
+                'job_title' => $this->sanitizeInput($this->input('job_title')),
+                'company' => $this->sanitizeInput($this->input('company')),
+                'location' => $this->sanitizeInput($this->input('location')),
+                'start_date' => $this->sanitizeInput($this->input('start_date')),
+                'end_date' => $this->sanitizeInput($this->input('end_date')),
+                'description' => $this->sanitizeInput($this->input('description')),
+                'is_current' => $this->input('is_current') ? 1 : 0,
+            ];
+
+            $this->db->update('experience', $data, 'id = ? AND user_id = ?', [$id, $user['id']]);
+            $this->json(['success' => true, 'message' => 'Experience updated successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to update experience'], 500);
+        }
+    }
+
+    public function deleteExperience(int $id): void
+    {
+        $this->requireAuth();
+        
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $user = $this->getCurrentUser();
+        
+        try {
+            $this->db->delete('experience', 'id = ? AND user_id = ?', [$id, $user['id']]);
+            $this->json(['success' => true, 'message' => 'Experience deleted successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to delete experience'], 500);
+        }
+    }
+
+    // Skills Management
+    public function showSkills(): void
+    {
+        $this->requireAuth();
+        $user = $this->getCurrentUser();
+        
+        $skills = [];
+        if ($this->db) {
+            try {
+                $skills = $this->db->fetchAll(
+                    "SELECT * FROM skills WHERE user_id = ? ORDER BY proficiency_level DESC, skill_name ASC",
+                    [$user['id']]
+                );
+            } catch (\Exception $e) {
+                error_log("Skills fetch error: " . $e->getMessage());
+            }
+        }
+
+        $this->view('profile/skills', [
+            'csrf_token' => $this->generateCSRFToken(),
+            'skills' => $skills,
+        ]);
+    }
+
+    public function addSkill(): void
+    {
+        $this->requireAuth();
+        
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $user = $this->getCurrentUser();
+        
+        try {
+            $data = [
+                'user_id' => $user['id'],
+                'skill_name' => $this->sanitizeInput($this->input('skill_name')),
+                'proficiency_level' => $this->sanitizeInput($this->input('proficiency_level')),
+                'years_of_experience' => $this->sanitizeInput($this->input('years_of_experience')),
+            ];
+
+            $this->db->insert('skills', $data);
+            $this->json(['success' => true, 'message' => 'Skill added successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to add skill'], 500);
+        }
+    }
+
+    public function updateSkill(int $id): void
+    {
+        $this->requireAuth();
+        
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $user = $this->getCurrentUser();
+        
+        try {
+            $data = [
+                'skill_name' => $this->sanitizeInput($this->input('skill_name')),
+                'proficiency_level' => $this->sanitizeInput($this->input('proficiency_level')),
+                'years_of_experience' => $this->sanitizeInput($this->input('years_of_experience')),
+            ];
+
+            $this->db->update('skills', $data, 'id = ? AND user_id = ?', [$id, $user['id']]);
+            $this->json(['success' => true, 'message' => 'Skill updated successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to update skill'], 500);
+        }
+    }
+
+    public function deleteSkill(int $id): void
+    {
+        $this->requireAuth();
+        
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $user = $this->getCurrentUser();
+        
+        try {
+            $this->db->delete('skills', 'id = ? AND user_id = ?', [$id, $user['id']]);
+            $this->json(['success' => true, 'message' => 'Skill deleted successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to delete skill'], 500);
+        }
+    }
+
+    // Publications Management
+    public function showPublications(): void
+    {
+        $this->requireAuth();
+        $user = $this->getCurrentUser();
+        
+        $publications = [];
+        if ($this->db) {
+            try {
+                $publications = $this->db->fetchAll(
+                    "SELECT * FROM publications WHERE user_id = ? ORDER BY year DESC, title ASC",
+                    [$user['id']]
+                );
+            } catch (\Exception $e) {
+                error_log("Publications fetch error: " . $e->getMessage());
+            }
+        }
+
+        $this->view('profile/publications', [
+            'csrf_token' => $this->generateCSRFToken(),
+            'publications' => $publications,
+        ]);
+    }
+
+    public function addPublication(): void
+    {
+        $this->requireAuth();
+        
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $user = $this->getCurrentUser();
+        
+        try {
+            $data = [
+                'user_id' => $user['id'],
+                'title' => $this->sanitizeInput($this->input('title')),
+                'authors' => $this->sanitizeInput($this->input('authors')),
+                'publication_type' => $this->sanitizeInput($this->input('publication_type')),
+                'journal_conference' => $this->sanitizeInput($this->input('journal_conference')),
+                'year' => $this->sanitizeInput($this->input('year')),
+                'volume' => $this->sanitizeInput($this->input('volume')),
+                'pages' => $this->sanitizeInput($this->input('pages')),
+                'doi' => $this->sanitizeInput($this->input('doi')),
+                'url' => $this->sanitizeInput($this->input('url')),
+                'abstract' => $this->sanitizeInput($this->input('abstract')),
+            ];
+
+            $this->db->insert('publications', $data);
+            $this->json(['success' => true, 'message' => 'Publication added successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to add publication'], 500);
+        }
+    }
+
+    public function updatePublication(int $id): void
+    {
+        $this->requireAuth();
+        
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $user = $this->getCurrentUser();
+        
+        try {
+            $data = [
+                'title' => $this->sanitizeInput($this->input('title')),
+                'authors' => $this->sanitizeInput($this->input('authors')),
+                'publication_type' => $this->sanitizeInput($this->input('publication_type')),
+                'journal_conference' => $this->sanitizeInput($this->input('journal_conference')),
+                'year' => $this->sanitizeInput($this->input('year')),
+                'volume' => $this->sanitizeInput($this->input('volume')),
+                'pages' => $this->sanitizeInput($this->input('pages')),
+                'doi' => $this->sanitizeInput($this->input('doi')),
+                'url' => $this->sanitizeInput($this->input('url')),
+                'abstract' => $this->sanitizeInput($this->input('abstract')),
+            ];
+
+            $this->db->update('publications', $data, 'id = ? AND user_id = ?', [$id, $user['id']]);
+            $this->json(['success' => true, 'message' => 'Publication updated successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to update publication'], 500);
+        }
+    }
+
+    public function deletePublication(int $id): void
+    {
+        $this->requireAuth();
+        
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $user = $this->getCurrentUser();
+        
+        try {
+            $this->db->delete('publications', 'id = ? AND user_id = ?', [$id, $user['id']]);
+            $this->json(['success' => true, 'message' => 'Publication deleted successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to delete publication'], 500);
         }
     }
 }
