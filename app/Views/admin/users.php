@@ -302,26 +302,15 @@ if (!function_exists('url')) {
         function buildCardHtml(profile) {
             const staffId = profile.staff_number || ('TSU-' + String(profile.id).padStart(5, '0'));
             const fullName = [profile.title, profile.first_name, profile.last_name].join(' ');
-            const bloodGroup = profile.blood_group || 'Not Added';
+            const bloodGroup = profile.blood_group || '';
             const logoUrl = '<?= asset('assets/images/tsu-logo.png') ?>';
             const bgUrl = '<?= asset('assets/images/tsu-building.jpg') ?>';
             
-            // Fixed image path logic
             let photoUrl = '';
             if (profile.profile_photo) {
-                const photoPath = profile.profile_photo;
-                // Check if it's already a full URL
-                if (photoPath.startsWith('http')) {
-                    photoUrl = photoPath;
-                }
-                // Check if path starts with uploads/ or /uploads/
-                else if (photoPath.startsWith('uploads/') || photoPath.startsWith('/uploads/')) {
-                    photoUrl = '<?= url('') ?>/' + photoPath.replace(/^\//, '');
-                }
-                // Otherwise assume it's just the filename
-                else {
-                    photoUrl = '<?= url('uploads/profiles/') ?>/' + photoPath.split('/').pop();
-                }
+                photoUrl = (profile.profile_photo.startsWith('http')) 
+                    ? profile.profile_photo 
+                    : '<?= url('uploads/profiles/') ?>' + profile.profile_photo;
             }
 
             const qrUrl = profile.qr_code_url || '';
@@ -332,39 +321,37 @@ if (!function_exists('url')) {
                     <div style="height: 100%; position: relative; background: #f8f9fa;">
                         <div style="position: absolute; top:0; left:0; width:100%; height:100%; background-image: url('${bgUrl}'); background-size: cover; background-position: center; opacity: 0.15; z-index: 0;"></div>
                         
-                        <div style="text-align: center; padding-top: 15px; position: relative; z-index: 2;">
-                            <img src="${logoUrl}" style="width: 60px; height: 60px; margin-bottom: 3px;">
+                        <div style="position: absolute; left: 20px; bottom: 40px; height: 180px; width: 40px; background: #1e40af; color: white; display: flex; align-items: center; justify-content: center; border-radius: 8px 8px 0 0; z-index: 3; box-shadow: 2px -2px 5px rgba(0,0,0,0.1);">
+                            <div style="transform: rotate(-90deg); white-space: nowrap; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; font-size: 13px;">STAFF ID CARD</div>
+                        </div>
+
+                        <div style="text-align: center; padding-top: 20px; position: relative; z-index: 2;">
+                            <img src="${logoUrl}" style="width: 65px; height: 65px; margin-bottom: 3px;">
                             <h2 style="color: #1e40af; font-weight: 800; font-size: 15px; text-transform: uppercase; margin: 0; line-height: 1.1;">TARABA STATE UNIVERSITY</h2>
                             <div style="display: inline-block; color: #1e40af; font-weight: 600; font-size: 12px; text-transform: uppercase; border-top: 1px solid #1e40af; border-bottom: 1px solid #1e40af; padding: 1px 8px; margin-top: 2px;">JALINGO</div>
                         </div>
 
-                        <div style="text-align: center; margin-top: 10px; position: relative; z-index: 2; height: 170px; display: flex; justify-content: center; align-items: center;">
+                        <div style="text-align: center; margin-top: 15px; position: relative; z-index: 2; height: 170px; display: flex; justify-content: center; align-items: center;">
                             ${photoUrl ? 
-                                `<img src="${photoUrl}" crossorigin="anonymous" style="width: 140px; height: 165px; object-fit: cover; border-radius: 8px; border: 3px solid #1e40af; box-shadow: 0 3px 6px rgba(0,0,0,0.15);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-                                <div style="width: 140px; height: 165px; background: #e2e8f0; color: #64748b; display: none; align-items: center; justify-content: center; font-size: 50px; border-radius: 8px; border: 3px solid #1e40af;">${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}</div>` 
-                                : 
-                                `<div style="width: 140px; height: 165px; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 50px; border-radius: 8px; border: 3px solid #1e40af;">${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}</div>`
+                                `<img src="${photoUrl}" style="width: 140px; height: 165px; object-fit: cover; border-radius: 8px; border: 3px solid #1e40af; box-shadow: 0 3px 6px rgba(0,0,0,0.15);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : ''
                             }
-                        </div>
-
-                        <div style="position: absolute; left: 15px; bottom: 55px; top: 200px; width: 35px; background: #1e40af; color: white; display: flex; align-items: center; justify-content: center; border-radius: 4px 4px 0 0; z-index: 2;">
-                            <div style="writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; white-space: nowrap; padding: 10px 0;">STAFF ID CARD</div>
+                            <div style="width: 140px; height: 165px; background: #e2e8f0; color: #64748b; display: ${photoUrl ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 50px; border-radius: 8px; border: 3px solid #1e40af;">${profile.first_name.charAt(0)}</div>
                         </div>
 
                         <div style="text-align: center; margin-top: 10px; position: relative; z-index: 2; padding: 0 10px;">
-                            <h3 style="color: #1e3a8a; font-weight: 800; font-size: 20px; margin: 0; line-height: 1.1;">${fullName}</h3>
+                            <h3 style="color: #1e3a8a; font-weight: 800; font-size: 19px; margin: 0; line-height: 1.1;">${fullName}</h3>
                             <div style="color: #4b5563; font-size: 13px; font-weight: 600; margin-top: 3px;">${profile.designation || ''}</div>
                         </div>
 
-                        <div style="margin-top: 12px; margin-left: 65px; margin-right: 10px; margin-bottom: 15px; position: relative; z-index: 2; font-size: 13px;">
+                        <div style="margin-top: 15px; margin-left: 70px; margin-right: 15px; position: relative; z-index: 2; font-size: 12px;">
                             <table style="width: 100%; border-collapse: collapse;">
-                                <tr><td style="font-weight: 700; color: #1e40af; width: 60px; vertical-align: top; padding-bottom: 6px;">Staff ID:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.3;">${staffId}</td></tr>
-                                <tr><td style="font-weight: 700; color: #1e40af; width: 60px; vertical-align: top; padding-bottom: 6px;">Faculty:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.3;">${profile.faculty || ''}</td></tr>
-                                <tr><td style="font-weight: 700; color: #1e40af; width: 60px; vertical-align: top; padding-bottom: 6px;">Dept:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.3;">${profile.department || ''}</td></tr>
+                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Staff ID:</td><td style="color: #111; font-weight: 600; vertical-align: top;">${staffId}</td></tr>
+                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Faculty:</td><td style="color: #111; font-weight: 600; vertical-align: top;">${profile.faculty || ''}</td></tr>
+                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Dept:</td><td style="color: #111; font-weight: 600; vertical-align: top;">${profile.department || ''}</td></tr>
                             </table>
                         </div>
 
-                        <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: #1e40af; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; z-index: 2;">
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: #1e40af; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; z-index: 2;">
                             Issued: <?= date('F Y') ?>
                         </div>
                     </div>
@@ -375,24 +362,25 @@ if (!function_exists('url')) {
                         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 120px; font-weight: 900; color: rgba(30, 64, 175, 0.05); z-index: 0; pointer-events: none;">TSU</div>
                         
                         <div style="position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;">
-                            <div style="margin-bottom: 15px; text-align: center;">
-                                <div style="font-size: 12px; color: #1e40af; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;">Scan to view online profile</div>
-                                ${qrUrl ? `<img src="${qrUrl}" style="width: 180px; height: 180px; border: 4px solid #1e3a8a; border-radius: 10px; padding: 4px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">` : ''}
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-size: 14px; color: #1e40af; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">SCAN THIS TO VERIFY</div>
+                                ${qrUrl ? `<img src="${qrUrl}" style="width: 220px; height: 220px; border: 4px solid #1e3a8a; border-radius: 12px; padding: 5px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">` : ''}
                             </div>
 
-                            <div style="border: 2px solid ${bloodGroup === 'Not Added' ? '#94a3b8' : '#dc2626'}; border-radius: 8px; padding: 4px 20px; margin-bottom: 15px; background: rgba(255, 255, 255, 0.95); min-width: 120px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                                <div style="font-size: 10px; text-transform: uppercase; color: ${bloodGroup === 'Not Added' ? '#64748b' : '#dc2626'}; font-weight: 700; letter-spacing: 1px;">Blood Group</div>
-                                <div style="font-size: ${bloodGroup === 'Not Added' ? '16px' : '24px'}; font-weight: ${bloodGroup === 'Not Added' ? '600' : '900'}; color: ${bloodGroup === 'Not Added' ? '#94a3b8' : '#333'}; line-height: 1.1;">${bloodGroup}</div>
-                            </div>
+                            ${bloodGroup ? `
+                            <div style="border: 3px solid #dc2626; border-radius: 10px; padding: 8px 30px; margin-bottom: 20px; background: rgba(255, 255, 255, 0.95); min-width: 140px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                <div style="font-size: 12px; text-transform: uppercase; color: #dc2626; font-weight: 800; letter-spacing: 1px;">Blood Group</div>
+                                <div style="font-size: 32px; font-weight: 900; color: #333; line-height: 1.1;">${bloodGroup}</div>
+                            </div>` : ''}
 
-                            <div style="font-size: 10px; color: #4b5563; line-height: 1.4; margin-top: auto; margin-bottom: 5px;">
+                            <div style="font-size: 11px; color: #4b5563; line-height: 1.4; margin-top: auto; margin-bottom: 5px;">
                                 <p style="margin:0;">If found, please return to:</p>
-                                <strong style="color: #1e40af; display: block; font-size: 12px; margin: 2px 0;">SECURITY UNIT</strong>
+                                <strong style="color: #1e40af; display: block; font-size: 13px; margin: 2px 0;">SECURITY UNIT</strong>
                                 <p style="margin:0;">Taraba State University<br>Jalingo, Nigeria</p>
                             </div>
                         </div>
 
-                        <div style="height: 40px; background: #1e40af; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; z-index: 2;">
+                        <div style="height: 40px; background: #1e40af; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; z-index: 2;">
                             Property of Taraba State University
                         </div>
                     </div>

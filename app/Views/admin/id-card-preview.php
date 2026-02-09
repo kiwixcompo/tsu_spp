@@ -48,24 +48,24 @@ if (!function_exists('url')) {
             z-index: 0;
         }
         
-        /* Header Section - COMPACTED */
+        /* Header Section */
         .header-section {
             text-align: center;
-            padding-top: 15px; /* Reduced from 25px */
+            padding-top: 20px;
             position: relative;
             z-index: 2;
         }
         
         .header-logo {
-            width: 60px; /* Reduced from 70px */
-            height: 60px;
+            width: 65px;
+            height: 65px;
             margin-bottom: 3px;
         }
         
         .uni-name {
             color: #1e40af;
             font-weight: 800;
-            font-size: 15px; /* Slightly smaller */
+            font-size: 15px;
             text-transform: uppercase;
             margin: 0;
             line-height: 1.1;
@@ -83,20 +83,20 @@ if (!function_exists('url')) {
             margin-top: 2px;
         }
         
-        /* Photo Section - COMPACTED */
+        /* Photo Section */
         .photo-section {
             text-align: center;
-            margin-top: 10px; /* Reduced margin */
+            margin-top: 15px;
             position: relative;
             z-index: 2;
-            height: 170px; /* Reduced height container */
+            height: 170px;
             display: flex;
             justify-content: center;
             align-items: center;
         }
         
         .profile-photo {
-            width: 140px; /* Slightly smaller photo */
+            width: 140px;
             height: 165px;
             object-fit: cover;
             border-radius: 8px;
@@ -119,33 +119,31 @@ if (!function_exists('url')) {
             border: 3px solid #1e40af;
         }
 
-        /* Vertical Blue Bar (Left) - Adjusted Position */
+        /* === VERTICAL BAR ADJUSTMENTS === */
         .vertical-bar {
             position: absolute;
-            left: 15px;
-            bottom: 55px; /* Above footer */
-            top: 200px; /* Adjusted to match new photo position */
-            width: 35px; /* Slightly thinner */
+            left: 20px;
+            bottom: 40px; /* Sits exactly on top of the 40px footer to look joined */
+            width: 40px;
+            height: 180px; /* Fixed height */
             background-color: #1e40af;
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px 4px 0 0;
-            z-index: 2;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            border-radius: 8px 8px 0 0; /* Rounded top, flat bottom */
+            z-index: 3; /* Above background */
+            box-shadow: 2px -2px 5px rgba(0,0,0,0.1);
         }
         
         .vertical-text {
-            writing-mode: vertical-lr; /* Changed from vertical-rl to vertical-lr */
-            transform: none; /* Removed rotation */
-            font-weight: 700;
+            transform: rotate(-90deg);
+            white-space: nowrap;
+            font-weight: 800;
             letter-spacing: 2px;
             text-transform: uppercase;
             font-size: 13px;
-            white-space: nowrap;
-            padding: 10px 0;
-            color: white; /* Ensure text is white for visibility */
+            color: white;
         }
         
         /* Name Section */
@@ -160,7 +158,7 @@ if (!function_exists('url')) {
         .full-name {
             color: #1e3a8a;
             font-weight: 800;
-            font-size: 20px;
+            font-size: 19px;
             margin: 0;
             line-height: 1.1;
         }
@@ -172,15 +170,14 @@ if (!function_exists('url')) {
             margin-top: 3px;
         }
         
-        /* Details Table - Optimized for space */
+        /* Details Table */
         .details-section {
-            margin-top: 12px;
-            margin-left: 65px; /* Clear blue bar */
-            margin-right: 10px;
-            margin-bottom: 15px;
+            margin-top: 15px;
+            margin-left: 70px; /* Clear vertical bar */
+            margin-right: 15px;
             position: relative;
             z-index: 2;
-            font-size: 13px;
+            font-size: 12px;
         }
         
         .details-table {
@@ -190,20 +187,20 @@ if (!function_exists('url')) {
         
         .details-table td {
             vertical-align: top;
-            padding-bottom: 6px;
+            padding-bottom: 5px;
         }
         
         .details-label {
             font-weight: 700;
             color: #1e40af;
-            width: 60px;
+            width: 55px;
             white-space: nowrap;
         }
         
         .details-value {
             color: #111;
             font-weight: 600;
-            line-height: 1.3;
+            line-height: 1.2;
         }
         
         /* Footer */
@@ -212,13 +209,13 @@ if (!function_exists('url')) {
             bottom: 0;
             left: 0;
             right: 0;
-            height: 40px; /* Slightly shorter footer */
+            height: 40px;
             background: #1e40af;
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 500;
             z-index: 2;
         }
@@ -254,63 +251,62 @@ if (!function_exists('url')) {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start; /* Changed from center to flex-start */
-            padding: 30px 20px 20px; /* Increased top padding */
+            justify-content: center;
+            padding: 20px;
             text-align: center;
         }
         
         .qr-container {
-            margin-top: 20px; /* Added top margin to push down */
-            margin-bottom: 20px; /* Increased bottom margin */
+            margin-bottom: 20px; /* Increased margin */
             text-align: center;
         }
         
         .scan-instruction {
-            font-size: 12px;
+            font-size: 14px; /* Larger */
             color: #1e40af;
-            font-weight: 700;
-            margin-bottom: 8px; /* Increased spacing */
+            font-weight: 800;
+            margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         
         .qr-code {
-            width: 180px;
-            height: 180px;
+            width: 220px; /* Increased Size */
+            height: 220px; /* Increased Size */
             border: 4px solid #1e3a8a;
-            border-radius: 10px;
-            padding: 4px;
+            border-radius: 12px;
+            padding: 5px;
             background: white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         
         .blood-group-box {
-            border: 2px solid #dc2626;
-            border-radius: 8px;
-            padding: 4px 20px;
-            margin-bottom: 20px; /* Increased spacing */
+            border: 3px solid #dc2626; /* Thicker border */
+            border-radius: 10px;
+            padding: 8px 30px; /* Expanded padding */
+            margin-bottom: 20px;
             background: rgba(255,255,255,0.95);
-            min-width: 120px;
+            min-width: 140px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         
         .bg-label {
-            font-size: 10px;
+            font-size: 12px;
             text-transform: uppercase;
             color: #dc2626;
-            font-weight: 700;
+            font-weight: 800;
             letter-spacing: 1px;
         }
         
         .bg-value {
-            font-size: 24px;
+            font-size: 32px; /* Larger Font */
             font-weight: 900;
             color: #333;
             line-height: 1.1;
         }
         
         .return-info {
-            font-size: 10px;
+            font-size: 11px;
             color: #4b5563;
             line-height: 1.4;
             margin-top: auto;
@@ -320,11 +316,10 @@ if (!function_exists('url')) {
         .return-info strong {
             color: #1e40af;
             display: block;
-            font-size: 12px;
+            font-size: 13px;
             margin: 2px 0;
         }
         
-        /* Print Styles */
         @media print {
             body { background: white; padding: 0; }
             .no-print { display: none !important; }
@@ -367,34 +362,25 @@ if (!function_exists('url')) {
 
                             <div class="photo-section">
                                 <?php 
-                                    // Image Path Logic for public/uploads/profiles/
                                     $photoUrl = null;
                                     if (!empty($profile['profile_photo'])) {
-                                        $photoPath = $profile['profile_photo'];
-                                        
-                                        // Check if it's already a full URL
-                                        if (filter_var($photoPath, FILTER_VALIDATE_URL)) {
-                                            $photoUrl = $photoPath;
-                                        } 
-                                        // Check if path starts with uploads/ or /uploads/
-                                        elseif (strpos($photoPath, 'uploads/') === 0 || strpos($photoPath, '/uploads/') === 0) {
-                                            $photoUrl = url(ltrim($photoPath, '/'));
-                                        }
-                                        // Otherwise assume it's just the filename in uploads/profiles/
-                                        else {
-                                            $photoUrl = url('uploads/profiles/' . basename($photoPath));
+                                        if (filter_var($profile['profile_photo'], FILTER_VALIDATE_URL)) {
+                                            $photoUrl = $profile['profile_photo'];
+                                        } elseif (strpos($profile['profile_photo'], 'uploads/') === 0 || strpos($profile['profile_photo'], '/uploads/') === 0) {
+                                            $photoUrl = url(ltrim($profile['profile_photo'], '/'));
+                                        } else {
+                                            $photoUrl = url('uploads/profiles/' . basename($profile['profile_photo']));
                                         }
                                     }
                                 ?>
-                                
                                 <?php if ($photoUrl): ?>
                                     <img src="<?= $photoUrl ?>" class="profile-photo" alt="Photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
                                     <div class="photo-placeholder" style="display:none;">
-                                        <?= strtoupper(substr($profile['first_name'], 0, 1) . substr($profile['last_name'], 0, 1)) ?>
+                                        <?= strtoupper(substr($profile['first_name'], 0, 1)) ?>
                                     </div>
                                 <?php else: ?>
                                     <div class="photo-placeholder">
-                                        <?= strtoupper(substr($profile['first_name'], 0, 1) . substr($profile['last_name'], 0, 1)) ?>
+                                        <?= strtoupper(substr($profile['first_name'], 0, 1)) ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -408,8 +394,7 @@ if (!function_exists('url')) {
                                         $profile['middle_name'] ?? '',
                                         $profile['last_name'] ?? ''
                                     ]);
-                                    $fullName = implode(' ', $nameParts);
-                                    echo htmlspecialchars(trim($fullName));
+                                    echo htmlspecialchars(trim(implode(' ', $nameParts)));
                                     ?>
                                 </h3>
                                 <div class="designation"><?= htmlspecialchars($profile['designation'] ?? '') ?></div>
@@ -449,7 +434,7 @@ if (!function_exists('url')) {
                             
                             <div class="back-content">
                                 <div class="qr-container">
-                                    <div class="scan-instruction">Scan to view online profile</div>
+                                    <div class="scan-instruction">SCAN THIS TO VERIFY</div>
                                     <?php if (!empty($qr_code_url)): ?>
                                         <img src="<?= $qr_code_url ?>" class="qr-code" alt="QR Code">
                                     <?php else: ?>
@@ -462,7 +447,7 @@ if (!function_exists('url')) {
                                 <div class="blood-group-box">
                                     <div class="bg-label">Blood Group</div>
                                     <div class="bg-value">
-                                        <?= !empty($profile['blood_group']) ? htmlspecialchars($profile['blood_group']) : '<span style="color:#999;font-size:16px;">Not Added</span>' ?>
+                                        <?= !empty($profile['blood_group']) ? htmlspecialchars($profile['blood_group']) : '<span style="color:#999;font-size:20px;">N/A</span>' ?>
                                     </div>
                                 </div>
 
@@ -501,7 +486,7 @@ if (!function_exists('url')) {
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
-                format: [54, 85.6] // Standard card size
+                format: [54, 85.6]
             });
 
             const captureCard = async (elementId) => {
@@ -526,7 +511,7 @@ if (!function_exists('url')) {
                 pdf.addImage(backImg, 'JPEG', 0, 0, 54, 85.6);
                 
                 // Save
-                const staffName = '<?= htmlspecialchars(trim(($profile['first_name'] ?? '') . '_' . ($profile['middle_name'] ?? '') . '_' . ($profile['last_name'] ?? ''))) ?>';
+                const staffName = '<?= htmlspecialchars(trim(($profile['first_name'] ?? '') . '_' . ($profile['last_name'] ?? ''))) ?>';
                 pdf.save(`ID_Card_${staffName}.pdf`);
             } catch (error) {
                 console.error('Error generating PDF:', error);
