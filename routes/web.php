@@ -123,3 +123,15 @@ $router->get('/qrcode/{filename}', 'IDCardController@serveQRCode');
 $router->get('/departments/{faculty}', 'UtilityController@getDepartments');
 $router->get('/faculties-departments', 'UtilityController@getAllFacultiesAndDepartments');
 $router->get('/health', 'UtilityController@healthCheck');
+
+// ID Card Manager routes (for id_card_manager role and admin)
+$router->get('/id-card-manager/dashboard', 'IDCardManagerController@dashboard', ['Auth', 'IDCardManager']);
+$router->get('/id-card-manager/browse', 'IDCardManagerController@browse', ['Auth', 'IDCardManager']);
+$router->get('/id-card-manager/print-history', 'IDCardManagerController@printHistory', ['Auth', 'IDCardManager']);
+$router->post('/id-card-manager/bulk-print', 'IDCardManagerController@bulkPrint', ['Auth', 'IDCardManager']);
+$router->get('/id-card-manager/settings', 'IDCardManagerController@settings', ['Auth', 'IDCardManager']);
+$router->post('/id-card-manager/settings', 'IDCardManagerController@settings', ['Auth', 'IDCardManager']);
+
+// Admin can also access ID card generator
+$router->get('/admin/id-card-generator', 'IDCardController@generator', ['Auth', 'Admin']);
+$router->get('/admin/id-card-preview', 'IDCardController@preview', ['Auth', 'Admin']);
