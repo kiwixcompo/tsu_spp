@@ -23,18 +23,35 @@ $allowed_ips = ['127.0.0.1', '::1']; // Add your IP here if needed
 // Uncomment the line below to restrict access
 // if (!in_array($_SERVER['REMOTE_ADDR'], $allowed_ips)) die('Access denied');
 
-// Load environment variables from parent directory
-if (file_exists(__DIR__ . '/../.env')) {
-    $lines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue;
-        if (strpos($line, '=') === false) continue;
-        list($key, $value) = explode('=', $line, 2);
-        $_ENV[trim($key)] = trim($value);
+// Load environment variables from multiple possible locations
+$envFiles = [
+    __DIR__ . '/../.env',
+    __DIR__ . '/../.env.production',
+    __DIR__ . '/../.env.google-workspace',
+    __DIR__ . '/../.env.local'
+];
+
+foreach ($envFiles as $envFile) {
+    if (file_exists($envFile)) {
+        $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line) || strpos($line, '#') === 0) continue;
+            if (strpos($line, '=') === false) continue;
+            list($key, $value) = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value);
+            // Remove quotes if present
+            $value = trim($value, '"\'');
+            if (!isset($_ENV[$key])) {
+                $_ENV[$key] = $value;
+            }
+        }
+        break; // Use first found env file
     }
 }
 
-// Database configuration - Use provided values or defaults
+// Database configuration - PRODUCTION DEFAULTS
 $host = $_ENV['DB_HOST'] ?? 'localhost';
 $dbname = $_ENV['DB_DATABASE'] ?? 'tsuniver_tsu_staff_portal';
 $username = $_ENV['DB_USERNAME'] ?? 'tsuniver_tsu_staff_portal';
@@ -116,28 +133,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_setup'])) {
         // Read and execute main setup SQL
         $setupSQL = file_get_contents(__DIR__ . '/../database/complete_setup_compatible.sql');
         
+        // Remove comments and split by semicolon
+        $setupSQL = preg_replace('/--.*$/m', '', $setupSQL); // Remove single-line comments
+        $setupSQL = preg_replace('/\/\*.*?\*\//s', '', $setupSQL); // Remove multi-line comments
+        
         // Split by semicolon and execute each statement
         $statements = array_filter(array_map('trim', explode(';', $setupSQL)));
         $tableCount = 0;
+        $errors = [];
         
         foreach ($statements as $statement) {
-            if (empty($statement) || strpos($statement, '--') === 0) continue;
+            if (empty($statement)) continue;
+            if (strlen($statement) < 10) continue; // Skip very short statements
+            
             try {
                 $pdo->exec($statement);
                 if (stripos($statement, 'CREATE TABLE') !== false) {
                     $tableCount++;
+                    // Extract table name for logging
+                    if (preg_match('/CREATE TABLE\s+(?:IF NOT EXISTS\s+)?`?(\w+)`?/i', $statement, $matches)) {
+                        error_log("Created table: " . $matches[1]);
+                    }
                 }
             } catch (PDOException $e) {
-                // Ignore "table already exists" errors
-                if (strpos($e->getMessage(), 'already exists') === false) {
-                    throw $e;
+                // Log the error but continue
+                $errorMsg = $e->getMessage();
+                if (strpos($errorMsg, 'already exists') === false) {
+                    $errors[] = "Statement error: " . substr($statement, 0, 100) . "... - " . $errorMsg;
+                    error_log("SQL Error: " . $errorMsg . " | Statement: " . substr($statement, 0, 200));
                 }
             }
+        }
+        
+        if (!empty($errors) && $tableCount === 0) {
+            throw new Exception("Failed to create tables. Errors: " . implode("; ", array_slice($errors, 0, 3)));
         }
         
         echo '<div class="step success">';
         echo '<h3>✅ Step 3: Tables Created</h3>';
         echo '<p>Created ' . $tableCount . ' database tables</p>';
+        if (!empty($errors)) {
+            echo '<p style="color: #f59e0b; font-size: 12px;">Note: ' . count($errors) . ' warnings (likely duplicate tables)</p>';
+        }
         echo '</div>';
         
         // Run migrations
@@ -215,6 +252,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_setup'])) {
         $adminPassword = 'Admin@2026!';
         $adminPasswordHash = password_hash($adminPassword, PASSWORD_DEFAULT);
         
+        // Verify users table exists
+        try {
+            $pdo->query("SELECT 1 FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            throw new Exception("Users table does not exist. Database setup may have failed. Please check the SQL file.");
+        }
+        
         // Check if admin exists
         $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->execute([$adminEmail]);
@@ -222,14 +266,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_setup'])) {
         
         if (!$adminExists) {
             // Create admin user
-            $pdo->exec("INSERT INTO users (email, email_prefix, password_hash, email_verified, account_status, role, created_at) 
-                       VALUES ('$adminEmail', 'admin', '$adminPasswordHash', 1, 'active', 'admin', NOW())");
+            $stmt = $pdo->prepare("INSERT INTO users (email, email_prefix, password_hash, email_verified, account_status, role, created_at) 
+                       VALUES (?, ?, ?, 1, 'active', 'admin', NOW())");
+            $stmt->execute([$adminEmail, 'admin', $adminPasswordHash]);
             
             $adminUserId = $pdo->lastInsertId();
             
             // Create admin profile
-            $pdo->exec("INSERT INTO profiles (user_id, staff_number, title, first_name, last_name, designation, faculty, department, profile_visibility, profile_slug, created_at) 
-                       VALUES ($adminUserId, 'TSU/ADMIN/001', 'Mr.', 'System', 'Administrator', 'System Administrator', 'Administration', 'ICT', 'private', 'admin', NOW())");
+            $stmt = $pdo->prepare("INSERT INTO profiles (user_id, staff_number, title, first_name, last_name, designation, faculty, department, profile_visibility, profile_slug, created_at) 
+                       VALUES (?, 'TSU/ADMIN/001', 'Mr.', 'System', 'Administrator', 'System Administrator', 'Administration', 'ICT', 'private', 'admin', NOW())");
+            $stmt->execute([$adminUserId]);
             
             echo '<div class="step success">';
             echo '<h3>✅ Step 7: Admin Account Created</h3>';

@@ -23,18 +23,35 @@ $allowed_ips = ['127.0.0.1', '::1']; // Add your IP here if needed
 // Uncomment the line below to restrict access
 // if (!in_array($_SERVER['REMOTE_ADDR'], $allowed_ips)) die('Access denied');
 
-// Load environment variables
-if (file_exists(__DIR__ . '/.env')) {
-    $lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue;
-        if (strpos($line, '=') === false) continue;
-        list($key, $value) = explode('=', $line, 2);
-        $_ENV[trim($key)] = trim($value);
+// Load environment variables from multiple possible locations
+$envFiles = [
+    __DIR__ . '/.env',
+    __DIR__ . '/.env.production',
+    __DIR__ . '/.env.google-workspace',
+    __DIR__ . '/.env.local'
+];
+
+foreach ($envFiles as $envFile) {
+    if (file_exists($envFile)) {
+        $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line) || strpos($line, '#') === 0) continue;
+            if (strpos($line, '=') === false) continue;
+            list($key, $value) = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value);
+            // Remove quotes if present
+            $value = trim($value, '"\'');
+            if (!isset($_ENV[$key])) {
+                $_ENV[$key] = $value;
+            }
+        }
+        break; // Use first found env file
     }
 }
 
-// Database configuration - Use provided values or defaults
+// Database configuration - PRODUCTION DEFAULTS
 $host = $_ENV['DB_HOST'] ?? 'localhost';
 $dbname = $_ENV['DB_DATABASE'] ?? 'tsuniver_tsu_staff_portal';
 $username = $_ENV['DB_USERNAME'] ?? 'tsuniver_tsu_staff_portal';
