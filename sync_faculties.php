@@ -2,7 +2,7 @@
 /**
  * Sync Faculties and Departments to Production Database
  * Run this once to update the faculties_departments table
- * Access: https://staff.tsuniversity.edu.ng/sync_faculties.php
+ * Access: https://staff.tsuniversity.ng/sync_faculties.php
  * 
  * IMPORTANT: Delete this file after running!
  */

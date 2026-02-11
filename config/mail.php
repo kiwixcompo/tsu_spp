@@ -19,7 +19,7 @@ return [
     ],
     
     'from' => [
-        'address' => $_ENV['MAIL_FROM_ADDRESS'] ?? 'noreply@tsuniversity.edu.ng',
+        'address' => $_ENV['MAIL_FROM_ADDRESS'] ?? 'noreply@tsuniversity.ng',
         'name' => $_ENV['MAIL_FROM_NAME'] ?? 'TSU Staff Portal',
     ],
     

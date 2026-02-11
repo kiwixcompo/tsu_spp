@@ -18,3 +18,11 @@
 2026-02-09 10:17:24 | jason@tsuniversity.edu.ng | 378999
 2026-02-09 10:19:26 | jason@tsuniversity.edu.ng | 298089
 2026-02-09 10:19:26 | jason@tsuniversity.edu.ng | 298089
+2026-02-09 15:22:23 | vice.chancellor@tsuniversity.edu.ng | 335008
+2026-02-09 15:22:23 | vice.chancellor@tsuniversity.edu.ng | 335008
+2026-02-09 15:32:03 | dvc.admin@tsuniversity.edu.ng | 366341
+2026-02-09 15:32:03 | dvc.admin@tsuniversity.edu.ng | 366341
+2026-02-09 15:34:12 | dvc.acad@tsuniversity.edu.ng | 426644
+2026-02-09 15:34:12 | dvc.acad@tsuniversity.edu.ng | 426644
+2026-02-09 15:41:51 | uabukar@tsuniversity.edu.ng | 956267
+2026-02-09 15:41:51 | uabukar@tsuniversity.edu.ng | 956267
