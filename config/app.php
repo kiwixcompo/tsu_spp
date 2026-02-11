@@ -7,7 +7,7 @@ return [
     'name' => $_ENV['APP_NAME'] ?? 'TSU Staff Profile Portal',
     'env' => ($_SERVER['HTTP_HOST'] ?? '') === 'staff.tsuniversity.ng' ? 'production' : ($_ENV['APP_ENV'] ?? 'local'),
     'debug' => ($_SERVER['HTTP_HOST'] ?? '') !== 'staff.tsuniversity.ng' && filter_var($_ENV['APP_DEBUG'] ?? true, FILTER_VALIDATE_BOOLEAN),
-    'url' => ($_SERVER['HTTP_HOST'] ?? '') === 'staff.tsuniversity.ng' ? 'https://staff.tsuniversity.ng' : ($_ENV['APP_URL'] ?? 'http://localhost/tsu_spp/public'),
+    'url' => ($_SERVER['HTTP_HOST'] ?? '') === 'staff.tsuniversity.ng' ? 'https://staff.tsuniversity.ng/public' : ($_ENV['APP_URL'] ?? 'http://localhost/public'),
     
     'session' => [
         'lifetime' => (int)($_ENV['SESSION_LIFETIME'] ?? 120),

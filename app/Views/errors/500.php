@@ -23,7 +23,7 @@
                             Please try again later.
                         </p>
                         <div class="d-flex gap-3 justify-content-center">
-                            <a href="/tsu_spp/public/" class="btn btn-primary">
+                            <a href="<?= url() ?>" class="btn btn-primary">
                                 <i class="fas fa-home me-2"></i>Go Home
                             </a>
                             <button onclick="window.location.reload()" class="btn btn-outline-primary">

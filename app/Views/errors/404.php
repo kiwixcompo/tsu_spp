@@ -23,10 +23,10 @@
                             had its name changed, or is temporarily unavailable.
                         </p>
                         <div class="d-flex gap-3 justify-content-center">
-                            <a href="/tsu_spp/public/" class="btn btn-primary">
+                            <a href="<?= url() ?>" class="btn btn-primary">
                                 <i class="fas fa-home me-2"></i>Go Home
                             </a>
-                            <a href="/tsu_spp/public/directory" class="btn btn-outline-primary">
+                            <a href="<?= url('directory') ?>" class="btn btn-outline-primary">
                                 <i class="fas fa-search me-2"></i>Browse Profiles
                             </a>
                         </div>

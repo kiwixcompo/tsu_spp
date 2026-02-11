@@ -45,8 +45,8 @@ class Controller
 
     protected function redirect(string $url): void
     {
-        // If URL doesn't start with http and doesn't contain /tsu_spp/public/, fix it
-        if (!preg_match('/^https?:\/\//', $url) && strpos($url, '/tsu_spp/public/') === false) {
+        // If URL doesn't start with http, use URL helper
+        if (!preg_match('/^https?:\/\//', $url)) {
             // Load URL helper if not available
             if (!function_exists('url')) {
                 require_once __DIR__ . '/../Helpers/UrlHelper.php';
