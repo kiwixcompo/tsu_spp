@@ -33,6 +33,18 @@ class DashboardController extends Controller
             return;
         }
 
+        // Redirect ID Card Manager to their dedicated dashboard
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'id_card_manager') {
+            $this->redirect('id-card-manager/dashboard');
+            return;
+        }
+
+        // Redirect Admin to admin dashboard
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+            $this->redirect('admin/dashboard');
+            return;
+        }
+
         // Check if user has a profile, if not redirect to profile setup
         if ($this->profileModel) {
             try {

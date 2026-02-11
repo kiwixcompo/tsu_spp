@@ -372,6 +372,8 @@ class AuthController extends Controller
         try {
             // Log user in
             $_SESSION['user_id'] = $user['id'];
+            $_SESSION['email'] = $user['email'];
+            $_SESSION['role'] = $user['role'] ?? 'user';
             
             // Update last login
             $this->userModel->updateLastLogin($user['id']);
@@ -386,8 +388,13 @@ class AuthController extends Controller
             // Log activity
             $this->logActivity('user_login', ['user_id' => $user['id']]);
 
-            // Check if user is admin and redirect accordingly
-            $redirectUrl = ($user['email'] === 'admin@tsuniversity.edu.ng') ? 'admin/dashboard' : 'dashboard';
+            // Redirect based on user role
+            $redirectUrl = 'dashboard'; // Default for regular users
+            if ($user['role'] === 'admin') {
+                $redirectUrl = 'admin/dashboard';
+            } elseif ($user['role'] === 'id_card_manager') {
+                $redirectUrl = 'id-card-manager/dashboard';
+            }
 
             $this->json([
                 'success' => true,
