@@ -28,16 +28,23 @@ if (file_exists(__DIR__ . '/.env')) {
     $lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         if (strpos(trim($line), '#') === 0) continue;
+        if (strpos($line, '=') === false) continue;
         list($key, $value) = explode('=', $line, 2);
         $_ENV[trim($key)] = trim($value);
     }
 }
 
-// Database configuration
+// Database configuration - Use provided values or defaults
 $host = $_ENV['DB_HOST'] ?? 'localhost';
-$dbname = $_ENV['DB_DATABASE'] ?? 'tsu_staff_portal';
-$username = $_ENV['DB_USERNAME'] ?? 'root';
-$password = $_ENV['DB_PASSWORD'] ?? '';
+$dbname = $_ENV['DB_DATABASE'] ?? 'tsuniver_tsu_staff_portal';
+$username = $_ENV['DB_USERNAME'] ?? 'tsuniver_tsu_staff_portal';
+$password = $_ENV['DB_PASSWORD'] ?? 'fSdohm!4lh.Kk[jD';
+
+// Allow override via GET parameters (for manual setup)
+if (isset($_GET['db_host'])) $host = $_GET['db_host'];
+if (isset($_GET['db_name'])) $dbname = $_GET['db_name'];
+if (isset($_GET['db_user'])) $username = $_GET['db_user'];
+if (isset($_GET['db_pass'])) $password = $_GET['db_pass'];
 
 // HTML Header
 ?>
@@ -324,6 +331,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_setup'])) {
             <strong>Database User:</strong> <?= htmlspecialchars($username) ?><br>
             <strong>Password:</strong> <?= $password ? '••••••••' : '<span style="color: red;">NOT SET</span>' ?>
         </p>
+        <?php if (!$password): ?>
+        <div style="background: #fef2f2; border: 1px solid #ef4444; padding: 10px; border-radius: 5px; margin-top: 10px;">
+            <strong style="color: #dc2626;">⚠️ No .env file found!</strong><br>
+            <p style="margin: 10px 0; font-size: 13px;">Please enter your database credentials below:</p>
+            <form method="GET" style="margin-top: 10px;">
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Database Name:</label>
+                    <input type="text" name="db_name" value="tsuniver_tsu_staff_portal" required style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Database Username:</label>
+                    <input type="text" name="db_user" value="tsuniver_tsu_staff_portal" required style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Database Password:</label>
+                    <input type="text" name="db_pass" value="" required style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Database Host:</label>
+                    <input type="text" name="db_host" value="localhost" required style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+                </div>
+                <button type="submit" style="background: #1e40af; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">
+                    Update Configuration
+                </button>
+            </form>
+        </div>
+        <?php endif; ?>
     </div>
     
     <form method="POST" onsubmit="return confirm('Are you sure you want to set up the database? This action cannot be undone.');">
