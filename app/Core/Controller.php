@@ -256,13 +256,21 @@ class Controller
             return null;
         }
         
-        return $this->db->fetch(
+        $user = $this->db->fetch(
             "SELECT u.*, p.first_name, p.last_name, p.profile_photo, p.profile_slug 
              FROM users u 
              LEFT JOIN profiles p ON u.id = p.user_id 
              WHERE u.id = ?",
             [$_SESSION['user_id']]
         );
+        
+        // Ensure role is set in session
+        if ($user && !isset($_SESSION['role'])) {
+            $_SESSION['role'] = $user['role'] ?? 'user';
+            $_SESSION['email'] = $user['email'];
+        }
+        
+        return $user;
     }
 
     protected function requireAuth(): void
