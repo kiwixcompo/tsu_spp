@@ -1,7 +1,7 @@
 -- ============================================================================
 -- Create ID Card Manager User
 -- ============================================================================
--- Email: idcards@tsuniversity.ng
+-- Email: idcards@tsuniversity.edu.ng
 -- Password: IDCard@2026!
 -- Role: id_card_manager
 -- ============================================================================
@@ -12,7 +12,7 @@
 -- Create ID Card Manager user
 INSERT INTO users (email, email_prefix, password_hash, email_verified, account_status, role, created_at)
 VALUES (
-    'idcards@tsuniversity.ng',
+    'idcards@tsuniversity.edu.ng',
     'idcards',
     '$2y$10$KXVBDEeOqdbNsJeM5ItvGe7BPlTQiDopyFtcxZumRmidKcB3vR7rm',
     1,
@@ -62,4 +62,4 @@ SELECT
     CONCAT(p.first_name, ' ', p.last_name) as name
 FROM users u
 INNER JOIN profiles p ON u.id = p.user_id
-WHERE u.email = 'idcards@tsuniversity.ng';
+WHERE u.email = 'idcards@tsuniversity.edu.ng';

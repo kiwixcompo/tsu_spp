@@ -195,68 +195,126 @@ class IDCardManagerController extends Controller
     {
         $stats = [];
         
-        // Total profiles
-        $stmt = $this->db->query("SELECT COUNT(*) FROM profiles");
-        $stats['total_profiles'] = $stmt->fetchColumn();
+        try {
+            // Total profiles
+            $stmt = $this->db->query("SELECT COUNT(*) FROM profiles");
+            $stats['total_profiles'] = $stmt->fetchColumn();
+        } catch (\Exception $e) {
+            $stats['total_profiles'] = 0;
+        }
         
-        // Total prints today
-        $stmt = $this->db->query("SELECT COUNT(*) FROM id_card_print_logs WHERE DATE(created_at) = CURDATE()");
-        $stats['prints_today'] = $stmt->fetchColumn();
+        try {
+            // Check if id_card_print_logs table exists
+            $tableExists = $this->db->query("SHOW TABLES LIKE 'id_card_print_logs'")->fetch();
+            
+            if ($tableExists) {
+                // Total prints today
+                $stmt = $this->db->query("SELECT COUNT(*) FROM id_card_print_logs WHERE DATE(created_at) = CURDATE()");
+                $stats['prints_today'] = $stmt->fetchColumn();
+                
+                // Total prints this month
+                $stmt = $this->db->query("SELECT COUNT(*) FROM id_card_print_logs WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())");
+                $stats['prints_this_month'] = $stmt->fetchColumn();
+                
+                // Total prints all time
+                $stmt = $this->db->query("SELECT COUNT(*) FROM id_card_print_logs");
+                $stats['total_prints'] = $stmt->fetchColumn();
+                
+                // Recent activity (last 7 days)
+                $stmt = $this->db->query("
+                    SELECT DATE(created_at) as date, COUNT(*) as count 
+                    FROM id_card_print_logs 
+                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                    GROUP BY DATE(created_at)
+                    ORDER BY date ASC
+                ");
+                $stats['activity_chart'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            } else {
+                $stats['prints_today'] = 0;
+                $stats['prints_this_month'] = 0;
+                $stats['total_prints'] = 0;
+                $stats['activity_chart'] = [];
+            }
+        } catch (\Exception $e) {
+            $stats['prints_today'] = 0;
+            $stats['prints_this_month'] = 0;
+            $stats['total_prints'] = 0;
+            $stats['activity_chart'] = [];
+        }
         
-        // Total prints this month
-        $stmt = $this->db->query("SELECT COUNT(*) FROM id_card_print_logs WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())");
-        $stats['prints_this_month'] = $stmt->fetchColumn();
-        
-        // Total prints all time
-        $stmt = $this->db->query("SELECT COUNT(*) FROM id_card_print_logs");
-        $stats['total_prints'] = $stmt->fetchColumn();
-        
-        // Profiles by staff type
-        $stmt = $this->db->query("SELECT staff_type, COUNT(*) as count FROM profiles GROUP BY staff_type");
-        $stats['by_staff_type'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        
-        // Recent activity (last 7 days)
-        $stmt = $this->db->query("
-            SELECT DATE(created_at) as date, COUNT(*) as count 
-            FROM id_card_print_logs 
-            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-            GROUP BY DATE(created_at)
-            ORDER BY date ASC
-        ");
-        $stats['activity_chart'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        try {
+            // Profiles by staff type
+            $stmt = $this->db->query("SELECT staff_type, COUNT(*) as count FROM profiles WHERE staff_type IS NOT NULL GROUP BY staff_type");
+            $stats['by_staff_type'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\Exception $e) {
+            $stats['by_staff_type'] = [];
+        }
         
         return $stats;
     }
     
     private function getRecentPrintLogs($limit = 10)
     {
-        $stmt = $this->db->prepare("
-            SELECT l.*, 
-                   p.first_name, p.last_name, p.staff_number, p.profile_photo,
-                   u.email as printer_email
-            FROM id_card_print_logs l
-            INNER JOIN profiles p ON l.profile_id = p.id
-            INNER JOIN users u ON l.user_id = u.id
-            ORDER BY l.created_at DESC
-            LIMIT ?
-        ");
-        $stmt->execute([$limit]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        try {
+            // Check if table exists
+            $tableExists = $this->db->query("SHOW TABLES LIKE 'id_card_print_logs'")->fetch();
+            
+            if (!$tableExists) {
+                return [];
+            }
+            
+            $stmt = $this->db->prepare("
+                SELECT l.*, 
+                       p.first_name, p.last_name, p.staff_number, p.profile_photo,
+                       u.email as printer_email
+                FROM id_card_print_logs l
+                INNER JOIN profiles p ON l.profile_id = p.id
+                INNER JOIN users u ON l.user_id = u.id
+                ORDER BY l.created_at DESC
+                LIMIT ?
+            ");
+            $stmt->execute([$limit]);
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\Exception $e) {
+            error_log("Error fetching print logs: " . $e->getMessage());
+            return [];
+        }
     }
     
     private function getPendingProfiles($limit = 20)
     {
-        $stmt = $this->db->prepare("
-            SELECT p.*, u.email
-            FROM profiles p
-            INNER JOIN users u ON p.user_id = u.id
-            LEFT JOIN id_card_print_logs l ON p.id = l.profile_id
-            WHERE l.id IS NULL
-            ORDER BY p.created_at DESC
-            LIMIT ?
-        ");
-        $stmt->execute([$limit]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        try {
+            // Check if table exists
+            $tableExists = $this->db->query("SHOW TABLES LIKE 'id_card_print_logs'")->fetch();
+            
+            if (!$tableExists) {
+                // If table doesn't exist, just return recent profiles
+                $stmt = $this->db->prepare("
+                    SELECT p.*, u.email
+                    FROM profiles p
+                    INNER JOIN users u ON p.user_id = u.id
+                    ORDER BY p.created_at DESC
+                    LIMIT ?
+                ");
+                $stmt->execute([$limit]);
+                return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            }
+            
+            $stmt = $this->db->prepare("
+                SELECT p.*, u.email
+                FROM profiles p
+                INNER JOIN users u ON p.user_id = u.id
+                LEFT JOIN id_card_print_logs l ON p.id = l.profile_id
+                WHERE l.id IS NULL
+                ORDER BY p.created_at DESC
+                LIMIT ?
+            ");
+            $stmt->execute([$limit]);
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\Exception $e) {
+            error_log("Error fetching pending profiles: " . $e->getMessage());
+            return [];
+        }
     }
     
     private function getFaculties()
