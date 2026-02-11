@@ -130,31 +130,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_setup'])) {
         echo '<p>Database "<strong>' . htmlspecialchars($dbname) . '</strong>" created/verified</p>';
         echo '</div>';
         
-        // Read and execute main setup SQL
+        // Read and execute main setup SQL using mysqli for better multi-query support
         $setupSQL = file_get_contents(__DIR__ . '/database/complete_setup_compatible.sql');
         
-        // Split by semicolon and execute each statement
-        $statements = array_filter(array_map('trim', explode(';', $setupSQL)));
-        $tableCount = 0;
-        
-        foreach ($statements as $statement) {
-            if (empty($statement) || strpos($statement, '--') === 0) continue;
-            try {
-                $pdo->exec($statement);
-                if (stripos($statement, 'CREATE TABLE') !== false) {
-                    $tableCount++;
-                }
-            } catch (PDOException $e) {
-                // Ignore "table already exists" errors
-                if (strpos($e->getMessage(), 'already exists') === false) {
-                    throw $e;
-                }
-            }
+        // Use mysqli for multi_query support
+        $mysqli = new mysqli($host, $username, $password, $dbname);
+        if ($mysqli->connect_error) {
+            throw new Exception("Connection failed: " . $mysqli->connect_error);
         }
+        
+        // Execute the entire SQL file at once
+        if ($mysqli->multi_query($setupSQL)) {
+            do {
+                // Store first result set
+                if ($result = $mysqli->store_result()) {
+                    $result->free();
+                }
+            } while ($mysqli->more_results() && $mysqli->next_result());
+        }
+        
+        if ($mysqli->error) {
+            error_log("MySQL Error: " . $mysqli->error);
+        }
+        
+        $mysqli->close();
+        
+        // Count created tables
+        $stmt = $pdo->query("SHOW TABLES");
+        $tableCount = $stmt->rowCount();
         
         echo '<div class="step success">';
         echo '<h3>✅ Step 3: Tables Created</h3>';
-        echo '<p>Created ' . $tableCount . ' database tables</p>';
+        echo '<p>Created/verified ' . $tableCount . ' database tables</p>';
         echo '</div>';
         
         // Run migrations
