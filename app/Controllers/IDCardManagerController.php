@@ -260,7 +260,7 @@ class IDCardManagerController extends Controller
                 return [];
             }
             
-            $stmt = $this->db->prepare("
+            return $this->db->fetchAll("
                 SELECT l.*, 
                        p.first_name, p.last_name, p.staff_number, p.profile_photo,
                        u.email as printer_email
@@ -269,9 +269,7 @@ class IDCardManagerController extends Controller
                 INNER JOIN users u ON l.user_id = u.id
                 ORDER BY l.created_at DESC
                 LIMIT ?
-            ");
-            $stmt->execute([$limit]);
-            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            ", [$limit]);
         } catch (\Exception $e) {
             error_log("Error fetching print logs: " . $e->getMessage());
             return [];
@@ -286,18 +284,16 @@ class IDCardManagerController extends Controller
             
             if (!$tableExists) {
                 // If table doesn't exist, just return recent profiles
-                $stmt = $this->db->prepare("
+                return $this->db->fetchAll("
                     SELECT p.*, u.email
                     FROM profiles p
                     INNER JOIN users u ON p.user_id = u.id
                     ORDER BY p.created_at DESC
                     LIMIT ?
-                ");
-                $stmt->execute([$limit]);
-                return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+                ", [$limit]);
             }
             
-            $stmt = $this->db->prepare("
+            return $this->db->fetchAll("
                 SELECT p.*, u.email
                 FROM profiles p
                 INNER JOIN users u ON p.user_id = u.id
@@ -305,9 +301,7 @@ class IDCardManagerController extends Controller
                 WHERE l.id IS NULL
                 ORDER BY p.created_at DESC
                 LIMIT ?
-            ");
-            $stmt->execute([$limit]);
-            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            ", [$limit]);
         } catch (\Exception $e) {
             error_log("Error fetching pending profiles: " . $e->getMessage());
             return [];
