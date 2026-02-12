@@ -97,7 +97,7 @@ if (!function_exists('escape_html')) {
                                         <div class="text-center mb-3">
                                             <div id="currentPhotoPreview">
                                                 <?php if (!empty($profile['profile_photo'])): ?>
-                                                    <img src="<?= url('storage/uploads/' . $profile['profile_photo']) ?>" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                                                    <img src="<?= asset($profile['profile_photo']) ?>" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
                                                 <?php else: ?>
                                                     <div class="bg-light border rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;"><i class="fas fa-user fa-3x text-muted"></i></div>
                                                 <?php endif; ?>
