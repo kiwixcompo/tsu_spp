@@ -503,38 +503,32 @@ class ProfileController extends Controller
 
             // Handle profile photo upload
             if (isset($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
-                $photoResult = $this->handleFileUpload($_FILES['profile_photo'], 'photo');
-                if ($photoResult['success']) {
-                    $updateData['profile_photo'] = $photoResult['filename'];
+                try {
+                    $photoPath = FileUploadHelper::uploadProfilePhoto($_FILES['profile_photo'], $user['id']);
+                    $updateData['profile_photo'] = $photoPath;
 
                     // Delete old photo if exists
                     if (!empty($profile['profile_photo'])) {
-                        $oldPhotoPath = __DIR__ . '/../../storage/uploads/' . $profile['profile_photo'];
-                        if (file_exists($oldPhotoPath)) {
-                            unlink($oldPhotoPath);
-                        }
+                        FileUploadHelper::deleteFile($profile['profile_photo']);
                     }
-                } else {
-                    $this->json(['error' => $photoResult['error']], 422);
+                } catch (\Exception $e) {
+                    $this->json(['error' => 'Photo upload failed: ' . $e->getMessage()], 422);
                     return;
                 }
             }
 
             // Handle CV upload
             if (isset($_FILES['cv_file']) && $_FILES['cv_file']['error'] === UPLOAD_ERR_OK) {
-                $cvResult = $this->handleFileUpload($_FILES['cv_file'], 'document');
-                if ($cvResult['success']) {
-                    $updateData['cv_file'] = $cvResult['filename'];
+                try {
+                    $cvPath = FileUploadHelper::uploadDocument($_FILES['cv_file'], $user['id'], 'cv');
+                    $updateData['cv_file'] = $cvPath;
 
                     // Delete old CV if exists
                     if (!empty($profile['cv_file'])) {
-                        $oldCvPath = __DIR__ . '/../../storage/uploads/' . $profile['cv_file'];
-                        if (file_exists($oldCvPath)) {
-                            unlink($oldCvPath);
-                        }
+                        FileUploadHelper::deleteFile($profile['cv_file']);
                     }
-                } else {
-                    $this->json(['error' => $cvResult['error']], 422);
+                } catch (\Exception $e) {
+                    $this->json(['error' => 'CV upload failed: ' . $e->getMessage()], 422);
                     return;
                 }
             }
