@@ -899,7 +899,7 @@ class ProfileController extends Controller
         if ($this->db) {
             try {
                 $publications = $this->db->fetchAll(
-                    "SELECT * FROM publications WHERE user_id = ? ORDER BY year DESC, title ASC",
+                    "SELECT * FROM publications WHERE user_id = ? ORDER BY publication_year DESC, title ASC",
                     [$user['id']]
                 );
             } catch (\Exception $e) {
