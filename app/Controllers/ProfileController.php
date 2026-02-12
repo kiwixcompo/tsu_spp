@@ -746,7 +746,7 @@ class ProfileController extends Controller
             $data = [
                 'user_id' => $user['id'],
                 'job_title' => $this->sanitizeInput($this->input('job_title')),
-                'company' => $this->sanitizeInput($this->input('company')),
+                'organization' => $this->sanitizeInput($this->input('company')),
                 'location' => $this->sanitizeInput($this->input('location')),
                 'start_date' => $this->sanitizeInput($this->input('start_date')),
                 'end_date' => $this->sanitizeInput($this->input('end_date')),
@@ -772,7 +772,7 @@ class ProfileController extends Controller
         try {
             $data = [
                 'job_title' => $this->sanitizeInput($this->input('job_title')),
-                'company' => $this->sanitizeInput($this->input('company')),
+                'organization' => $this->sanitizeInput($this->input('company')),
                 'location' => $this->sanitizeInput($this->input('location')),
                 'start_date' => $this->sanitizeInput($this->input('start_date')),
                 'end_date' => $this->sanitizeInput($this->input('end_date')),
