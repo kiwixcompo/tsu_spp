@@ -3,15 +3,12 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
-use App\Core\Database;
 
 class IDCardManagerController extends Controller
 {
-    private $db;
-
     public function __construct()
     {
-        $this->db = Database::getInstance()->getConnection();
+        parent::__construct();
     }
 
     /**
