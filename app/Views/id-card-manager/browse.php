@@ -1,4 +1,9 @@
-<!DOCTYPE html>
+<?php if (!function_exists('url')) {
+    require_once __DIR__ . '/../../Helpers/UrlHelper.php';
+}
+if (!function_exists('escape_html')) {
+    require_once __DIR__ . '/../../Helpers/TextHelper.php';
+} ?><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
