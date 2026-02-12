@@ -464,10 +464,16 @@ if (!function_exists('escape_html')) {
                     const alertContainer = document.getElementById('alert-container');
                     const type = data.success ? 'success' : 'danger';
                     alertContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show">${data.message || data.error || 'Error occurred'}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
-                    if (data.success) window.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
+                    if (data.success) {
+                        window.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
+                        // Reload page after 1 second to show updated photo
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    }
                 })
                 .catch(error => {
                     console.error('Fetch error:', error);
