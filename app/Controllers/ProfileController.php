@@ -23,11 +23,10 @@ class ProfileController extends Controller
     public function showSetup(): void
     {
         $this->requireAuth();
-        
         // Check if user already has a profile
         $user = $this->getCurrentUser();
         $existingProfile = null;
-        
+
         if ($this->profileModel) {
             $existingProfile = $this->profileModel->findByUserId($user['id']);
         }
@@ -50,6 +49,7 @@ class ProfileController extends Controller
 
     /**
      * Get faculties with their departments
+     * Returns associative array: ['Faculty Name' => ['Dept 1', 'Dept 2']]
      */
     private function getFacultiesWithDepartments(): array
     {
@@ -58,22 +58,18 @@ class ProfileController extends Controller
         }
 
         try {
-            $stmt = $this->db->query("SELECT faculty_name, department_name FROM faculties_departments ORDER BY faculty_name, department_name");
-            $data = $stmt->fetchAll();
-            
+            // Fetch raw data
+            $data = $this->db->fetchAll(
+                "SELECT faculty, department FROM faculties_departments ORDER BY faculty, department"
+            );
+
             $faculties = [];
             foreach ($data as $row) {
-                $facultyName = $row['faculty_name'];
-                if (!isset($faculties[$facultyName])) {
-                    $faculties[$facultyName] = [
-                        'name' => $facultyName,
-                        'departments' => []
-                    ];
-                }
-                $faculties[$facultyName]['departments'][] = $row['department_name'];
+                // Group departments under their faculty name
+                $faculties[$row['faculty']][] = $row['department'];
             }
-            
-            return array_values($faculties);
+
+            return $faculties;
         } catch (\Exception $e) {
             error_log("Error fetching faculties: " . $e->getMessage());
             return [];
@@ -88,7 +84,6 @@ class ProfileController extends Controller
         if (!$this->db) {
             return [];
         }
-
         try {
             $stmt = $this->db->query("SELECT name FROM units_offices ORDER BY name");
             return $stmt->fetchAll(\PDO::FETCH_COLUMN);
@@ -112,13 +107,13 @@ class ProfileController extends Controller
         // Disable error display for clean JSON response
         ini_set('display_errors', '0');
         error_reporting(E_ALL);
-        
+
         // Ensure clean output buffer for JSON response
         while (ob_get_level()) {
             ob_end_clean();
         }
         ob_start();
-        
+
         $this->requireAuth();
 
         if (!$this->verifyCSRFToken()) {
@@ -149,7 +144,6 @@ class ProfileController extends Controller
 
         try {
             $user = $this->getCurrentUser();
-            
             if (!$user) {
                 ob_end_clean();
                 header('Content-Type: application/json');
@@ -182,10 +176,11 @@ class ProfileController extends Controller
             }
 
             $registrationData = $_SESSION['registration_data'] ?? [];
+
             $staffPrefix = $this->sanitizeInput($this->input('staff_prefix'));
             $staffNumberRaw = $this->sanitizeInput($this->input('staff_number'));
             $combinedStaffNumber = '';
-            
+
             if (!empty($staffPrefix) && in_array($staffPrefix, ['TSU/SP/', 'TSU/JP/'], true)) {
                 $combinedStaffNumber = $staffPrefix . $staffNumberRaw;
             } elseif (!empty($registrationData['staff_number'])) {
@@ -244,25 +239,27 @@ class ProfileController extends Controller
                     require_once __DIR__ . '/../Helpers/QRCodeHelper.php';
                     $qrCodePath = \App\Helpers\QRCodeHelper::generateProfileQRCode($user['id'], $profileSlug);
                     if ($qrCodePath) {
-                        $this->db->update('profiles', 
-                            ['qr_code_path' => $qrCodePath], 
-                            'user_id = ?', 
+                        $this->db->update(
+                            'profiles',
+                            ['qr_code_path' => $qrCodePath],
+                            'user_id = ?',
                             [$user['id']]
                         );
                     }
                 } catch (\Exception $e) {
                     error_log('QR code generation failed: ' . $e->getMessage());
                 }
-                
+
                 // Clear registration data from session
                 unset($_SESSION['registration_data']);
 
                 // Activate account now that profile is complete
                 if ($this->db) {
                     try {
-                        $this->db->update('users', 
-                            ['account_status' => 'active'], 
-                            'id = ?', 
+                        $this->db->update(
+                            'users',
+                            ['account_status' => 'active'],
+                            'id = ?',
                             [$user['id']]
                         );
                     } catch (\Exception $e) {
@@ -274,9 +271,10 @@ class ProfileController extends Controller
                 if ($this->db) {
                     try {
                         $stats = $this->profileModel->getProfileStats($user['id']);
-                        $this->db->update('users', 
-                            ['profile_completion' => $stats['completion']], 
-                            'id = ?', 
+                        $this->db->update(
+                            'users',
+                            ['profile_completion' => $stats['completion']],
+                            'id = ?',
                             [$user['id']]
                         );
                     } catch (\Exception $e) {
@@ -308,7 +306,6 @@ class ProfileController extends Controller
                 echo json_encode(['error' => 'Failed to create profile. Please try again.']);
                 exit;
             }
-
         } catch (\Exception $e) {
             ob_end_clean();
             header('Content-Type: application/json');
@@ -323,17 +320,28 @@ class ProfileController extends Controller
     public function showEdit(): void
     {
         $this->requireAuth();
-        
         $user = $this->getCurrentUser();
         $profile = null;
-        
+
         if ($this->profileModel) {
             $profile = $this->profileModel->findByUserId($user['id']);
+
             if ($profile) {
                 $textFields = [
-                    'title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department',
-                    'designation', 'office_location', 'office_phone', 'professional_summary',
-                    'research_interests', 'expertise_keywords', 'blood_group'
+                    'title',
+                    'first_name',
+                    'middle_name',
+                    'last_name',
+                    'faculty',
+                    'department',
+                    'designation',
+                    'office_location',
+                    'office_phone',
+                    'professional_summary',
+                    'research_interests',
+                    'expertise_keywords',
+                    'blood_group',
+                    'unit'
                 ];
                 foreach ($textFields as $field) {
                     if (isset($profile[$field])) {
@@ -370,7 +378,7 @@ class ProfileController extends Controller
         }
 
         $user = $this->getCurrentUser();
-        
+
         if (!$this->profileModel) {
             $this->json(['error' => 'Profile service unavailable'], 500);
             return;
@@ -384,7 +392,7 @@ class ProfileController extends Controller
 
         // Get staff type for conditional validation
         $staffType = $this->sanitizeInput($this->input('staff_type')) ?: ($profile['staff_type'] ?? 'teaching');
-        
+
         // Base validation rules
         $validationRules = [
             'title' => 'required',
@@ -410,12 +418,12 @@ class ProfileController extends Controller
             $unit = $this->sanitizeInput($this->input('unit'));
             $faculty = $this->sanitizeInput($this->input('faculty'));
             $department = $this->sanitizeInput($this->input('department'));
-            
+
             // Must have either unit OR (faculty + department)
             if (empty($unit) && empty($faculty) && empty($department)) {
                 $errors['staff_location'] = 'Please select either a Unit/Office OR Faculty/Department';
             }
-            
+
             // If faculty selected, department must also be selected
             if (!empty($faculty) && empty($department)) {
                 $errors['department'] = 'Please select a department for the selected faculty';
@@ -431,11 +439,9 @@ class ProfileController extends Controller
             // Combine staff prefix and number
             $staffPrefix = $this->sanitizeInput($this->input('staff_prefix'));
             $staffNumber = $this->sanitizeInput($this->input('staff_number'));
-            
+
             // Only update staff number if provided
-            $fullStaffNumber = (!empty($staffPrefix) && !empty($staffNumber)) 
-                ? $staffPrefix . $staffNumber 
-                : $profile['staff_number'];
+            $fullStaffNumber = (!empty($staffPrefix) && !empty($staffNumber)) ? $staffPrefix . $staffNumber : $profile['staff_number'];
 
             // Check if staff number is being changed and if new number already exists
             if ($fullStaffNumber !== $profile['staff_number']) {
@@ -481,7 +487,7 @@ class ProfileController extends Controller
                 $unit = $this->sanitizeInput($this->input('unit'));
                 $faculty = $this->sanitizeInput($this->input('faculty'));
                 $department = $this->sanitizeInput($this->input('department'));
-                
+
                 if (!empty($unit)) {
                     // Unit selected, clear faculty/department
                     $updateData['unit'] = $unit;
@@ -500,6 +506,7 @@ class ProfileController extends Controller
                 $photoResult = $this->handleFileUpload($_FILES['profile_photo'], 'photo');
                 if ($photoResult['success']) {
                     $updateData['profile_photo'] = $photoResult['filename'];
+
                     // Delete old photo if exists
                     if (!empty($profile['profile_photo'])) {
                         $oldPhotoPath = __DIR__ . '/../../storage/uploads/' . $profile['profile_photo'];
@@ -518,6 +525,7 @@ class ProfileController extends Controller
                 $cvResult = $this->handleFileUpload($_FILES['cv_file'], 'document');
                 if ($cvResult['success']) {
                     $updateData['cv_file'] = $cvResult['filename'];
+
                     // Delete old CV if exists
                     if (!empty($profile['cv_file'])) {
                         $oldCvPath = __DIR__ . '/../../storage/uploads/' . $profile['cv_file'];
@@ -537,9 +545,10 @@ class ProfileController extends Controller
                 // Update profile completion
                 if ($this->db) {
                     $stats = $this->profileModel->getProfileStats($user['id']);
-                    $this->db->update('users', 
-                        ['profile_completion' => $stats['completion']], 
-                        'id = ?', 
+                    $this->db->update(
+                        'users',
+                        ['profile_completion' => $stats['completion']],
+                        'id = ?',
                         [$user['id']]
                     );
                 }
@@ -554,17 +563,11 @@ class ProfileController extends Controller
             } else {
                 $this->json(['error' => 'Failed to update profile'], 500);
             }
-
         } catch (\Exception $e) {
             $this->json(['error' => 'Profile update failed: ' . $e->getMessage()], 500);
         }
     }
 
-    // [KEEP OTHER METHODS: showEducation, addEducation, showExperience, etc. exactly as they were in the previous file]
-    // For brevity, I am assuming you have the rest of the standard CRUD methods from the previous version. 
-    // They did not require changes for the ID card logic.
-    // If you need those repeated fully, let me know, but the critical changes for ID card are above.
-    
     /**
      * Handle file upload (photo or document)
      */
@@ -581,7 +584,8 @@ class ProfileController extends Controller
             $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
             $maxSize = 2 * 1024 * 1024; // 2MB
             $allowedExtensions = ['jpg', 'jpeg', 'png'];
-        } else { // document
+        } else {
+            // document
             $allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
             $maxSize = 5 * 1024 * 1024; // 5MB
             $allowedExtensions = ['pdf', 'doc', 'docx'];
@@ -624,8 +628,8 @@ class ProfileController extends Controller
     {
         $this->requireAuth();
         $user = $this->getCurrentUser();
-        
         $education = [];
+
         if ($this->db) {
             try {
                 $education = $this->db->fetchAll(
@@ -646,14 +650,12 @@ class ProfileController extends Controller
     public function addEducation(): void
     {
         $this->requireAuth();
-        
         if (!$this->verifyCSRFToken()) {
             $this->json(['error' => 'Invalid CSRF token'], 403);
             return;
         }
 
         $user = $this->getCurrentUser();
-        
         try {
             $data = [
                 'user_id' => $user['id'],
@@ -664,7 +666,6 @@ class ProfileController extends Controller
                 'end_year' => $this->sanitizeInput($this->input('end_year')),
                 'description' => $this->sanitizeInput($this->input('description')),
             ];
-
             $this->db->insert('education', $data);
             $this->json(['success' => true, 'message' => 'Education added successfully']);
         } catch (\Exception $e) {
@@ -675,14 +676,12 @@ class ProfileController extends Controller
     public function updateEducation(int $id): void
     {
         $this->requireAuth();
-        
         if (!$this->verifyCSRFToken()) {
             $this->json(['error' => 'Invalid CSRF token'], 403);
             return;
         }
 
         $user = $this->getCurrentUser();
-        
         try {
             $data = [
                 'institution' => $this->sanitizeInput($this->input('institution')),
@@ -692,7 +691,6 @@ class ProfileController extends Controller
                 'end_year' => $this->sanitizeInput($this->input('end_year')),
                 'description' => $this->sanitizeInput($this->input('description')),
             ];
-
             $this->db->update('education', $data, 'id = ? AND user_id = ?', [$id, $user['id']]);
             $this->json(['success' => true, 'message' => 'Education updated successfully']);
         } catch (\Exception $e) {
@@ -703,14 +701,12 @@ class ProfileController extends Controller
     public function deleteEducation(int $id): void
     {
         $this->requireAuth();
-        
         if (!$this->verifyCSRFToken()) {
             $this->json(['error' => 'Invalid CSRF token'], 403);
             return;
         }
 
         $user = $this->getCurrentUser();
-        
         try {
             $this->db->delete('education', 'id = ? AND user_id = ?', [$id, $user['id']]);
             $this->json(['success' => true, 'message' => 'Education deleted successfully']);
@@ -724,8 +720,8 @@ class ProfileController extends Controller
     {
         $this->requireAuth();
         $user = $this->getCurrentUser();
-        
         $experience = [];
+
         if ($this->db) {
             try {
                 $experience = $this->db->fetchAll(
@@ -746,14 +742,12 @@ class ProfileController extends Controller
     public function addExperience(): void
     {
         $this->requireAuth();
-        
         if (!$this->verifyCSRFToken()) {
             $this->json(['error' => 'Invalid CSRF token'], 403);
             return;
         }
 
         $user = $this->getCurrentUser();
-        
         try {
             $data = [
                 'user_id' => $user['id'],
@@ -765,7 +759,6 @@ class ProfileController extends Controller
                 'description' => $this->sanitizeInput($this->input('description')),
                 'is_current' => $this->input('is_current') ? 1 : 0,
             ];
-
             $this->db->insert('experience', $data);
             $this->json(['success' => true, 'message' => 'Experience added successfully']);
         } catch (\Exception $e) {
@@ -776,14 +769,12 @@ class ProfileController extends Controller
     public function updateExperience(int $id): void
     {
         $this->requireAuth();
-        
         if (!$this->verifyCSRFToken()) {
             $this->json(['error' => 'Invalid CSRF token'], 403);
             return;
         }
 
         $user = $this->getCurrentUser();
-        
         try {
             $data = [
                 'job_title' => $this->sanitizeInput($this->input('job_title')),
@@ -794,7 +785,6 @@ class ProfileController extends Controller
                 'description' => $this->sanitizeInput($this->input('description')),
                 'is_current' => $this->input('is_current') ? 1 : 0,
             ];
-
             $this->db->update('experience', $data, 'id = ? AND user_id = ?', [$id, $user['id']]);
             $this->json(['success' => true, 'message' => 'Experience updated successfully']);
         } catch (\Exception $e) {
@@ -805,14 +795,12 @@ class ProfileController extends Controller
     public function deleteExperience(int $id): void
     {
         $this->requireAuth();
-        
         if (!$this->verifyCSRFToken()) {
             $this->json(['error' => 'Invalid CSRF token'], 403);
             return;
         }
 
         $user = $this->getCurrentUser();
-        
         try {
             $this->db->delete('experience', 'id = ? AND user_id = ?', [$id, $user['id']]);
             $this->json(['success' => true, 'message' => 'Experience deleted successfully']);
@@ -826,8 +814,8 @@ class ProfileController extends Controller
     {
         $this->requireAuth();
         $user = $this->getCurrentUser();
-        
         $skills = [];
+
         if ($this->db) {
             try {
                 $skills = $this->db->fetchAll(
@@ -848,14 +836,12 @@ class ProfileController extends Controller
     public function addSkill(): void
     {
         $this->requireAuth();
-        
         if (!$this->verifyCSRFToken()) {
             $this->json(['error' => 'Invalid CSRF token'], 403);
             return;
         }
 
         $user = $this->getCurrentUser();
-        
         try {
             $data = [
                 'user_id' => $user['id'],
@@ -863,7 +849,6 @@ class ProfileController extends Controller
                 'proficiency_level' => $this->sanitizeInput($this->input('proficiency_level')),
                 'years_of_experience' => $this->sanitizeInput($this->input('years_of_experience')),
             ];
-
             $this->db->insert('skills', $data);
             $this->json(['success' => true, 'message' => 'Skill added successfully']);
         } catch (\Exception $e) {
@@ -874,21 +859,18 @@ class ProfileController extends Controller
     public function updateSkill(int $id): void
     {
         $this->requireAuth();
-        
         if (!$this->verifyCSRFToken()) {
             $this->json(['error' => 'Invalid CSRF token'], 403);
             return;
         }
 
         $user = $this->getCurrentUser();
-        
         try {
             $data = [
                 'skill_name' => $this->sanitizeInput($this->input('skill_name')),
                 'proficiency_level' => $this->sanitizeInput($this->input('proficiency_level')),
                 'years_of_experience' => $this->sanitizeInput($this->input('years_of_experience')),
             ];
-
             $this->db->update('skills', $data, 'id = ? AND user_id = ?', [$id, $user['id']]);
             $this->json(['success' => true, 'message' => 'Skill updated successfully']);
         } catch (\Exception $e) {
@@ -899,14 +881,12 @@ class ProfileController extends Controller
     public function deleteSkill(int $id): void
     {
         $this->requireAuth();
-        
         if (!$this->verifyCSRFToken()) {
             $this->json(['error' => 'Invalid CSRF token'], 403);
             return;
         }
 
         $user = $this->getCurrentUser();
-        
         try {
             $this->db->delete('skills', 'id = ? AND user_id = ?', [$id, $user['id']]);
             $this->json(['success' => true, 'message' => 'Skill deleted successfully']);
@@ -920,8 +900,8 @@ class ProfileController extends Controller
     {
         $this->requireAuth();
         $user = $this->getCurrentUser();
-        
         $publications = [];
+
         if ($this->db) {
             try {
                 $publications = $this->db->fetchAll(
@@ -942,14 +922,12 @@ class ProfileController extends Controller
     public function addPublication(): void
     {
         $this->requireAuth();
-        
         if (!$this->verifyCSRFToken()) {
             $this->json(['error' => 'Invalid CSRF token'], 403);
             return;
         }
 
         $user = $this->getCurrentUser();
-        
         try {
             $data = [
                 'user_id' => $user['id'],
@@ -964,7 +942,6 @@ class ProfileController extends Controller
                 'url' => $this->sanitizeInput($this->input('url')),
                 'abstract' => $this->sanitizeInput($this->input('abstract')),
             ];
-
             $this->db->insert('publications', $data);
             $this->json(['success' => true, 'message' => 'Publication added successfully']);
         } catch (\Exception $e) {
@@ -975,14 +952,12 @@ class ProfileController extends Controller
     public function updatePublication(int $id): void
     {
         $this->requireAuth();
-        
         if (!$this->verifyCSRFToken()) {
             $this->json(['error' => 'Invalid CSRF token'], 403);
             return;
         }
 
         $user = $this->getCurrentUser();
-        
         try {
             $data = [
                 'title' => $this->sanitizeInput($this->input('title')),
@@ -996,7 +971,6 @@ class ProfileController extends Controller
                 'url' => $this->sanitizeInput($this->input('url')),
                 'abstract' => $this->sanitizeInput($this->input('abstract')),
             ];
-
             $this->db->update('publications', $data, 'id = ? AND user_id = ?', [$id, $user['id']]);
             $this->json(['success' => true, 'message' => 'Publication updated successfully']);
         } catch (\Exception $e) {
@@ -1007,14 +981,12 @@ class ProfileController extends Controller
     public function deletePublication(int $id): void
     {
         $this->requireAuth();
-        
         if (!$this->verifyCSRFToken()) {
             $this->json(['error' => 'Invalid CSRF token'], 403);
             return;
         }
 
         $user = $this->getCurrentUser();
-        
         try {
             $this->db->delete('publications', 'id = ? AND user_id = ?', [$id, $user['id']]);
             $this->json(['success' => true, 'message' => 'Publication deleted successfully']);

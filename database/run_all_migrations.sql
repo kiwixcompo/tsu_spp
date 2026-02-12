@@ -172,3 +172,79 @@ SHOW TABLES LIKE 'id_card%';
 SHOW TABLES LIKE 'units_offices';
 
 SELECT 'Migration completed successfully!' as status;
+
+
+-- ============================================================================
+-- SEED FACULTIES AND DEPARTMENTS
+-- ============================================================================
+
+-- Insert faculties and departments data
+INSERT IGNORE INTO faculties_departments (faculty_name, department_name) VALUES
+-- Faculty of Agriculture
+('Faculty of Agriculture', 'Agricultural Economics and Extension'),
+('Faculty of Agriculture', 'Animal Science'),
+('Faculty of Agriculture', 'Crop Science'),
+('Faculty of Agriculture', 'Fisheries and Aquaculture'),
+('Faculty of Agriculture', 'Soil Science'),
+
+-- Faculty of Arts
+('Faculty of Arts', 'English and Literary Studies'),
+('Faculty of Arts', 'History and International Studies'),
+('Faculty of Arts', 'Linguistics and Nigerian Languages'),
+('Faculty of Arts', 'Music'),
+('Faculty of Arts', 'Theatre Arts'),
+
+-- Faculty of Education
+('Faculty of Education', 'Adult Education'),
+('Faculty of Education', 'Educational Foundations'),
+('Faculty of Education', 'Educational Management'),
+('Faculty of Education', 'Guidance and Counselling'),
+('Faculty of Education', 'Library and Information Science'),
+('Faculty of Education', 'Science Education'),
+
+-- Faculty of Engineering
+('Faculty of Engineering', 'Agricultural and Bioresources Engineering'),
+('Faculty of Engineering', 'Civil Engineering'),
+('Faculty of Engineering', 'Electrical/Electronic Engineering'),
+('Faculty of Engineering', 'Mechanical Engineering'),
+
+-- Faculty of Environmental Sciences
+('Faculty of Environmental Sciences', 'Architecture'),
+('Faculty of Environmental Sciences', 'Estate Management'),
+('Faculty of Environmental Sciences', 'Quantity Surveying'),
+('Faculty of Environmental Sciences', 'Surveying and Geoinformatics'),
+('Faculty of Environmental Sciences', 'Urban and Regional Planning'),
+
+-- Faculty of Law
+('Faculty of Law', 'Business Law'),
+('Faculty of Law', 'International Law'),
+('Faculty of Law', 'Private and Property Law'),
+('Faculty of Law', 'Public Law'),
+
+-- Faculty of Management Sciences
+('Faculty of Management Sciences', 'Accounting'),
+('Faculty of Management Sciences', 'Banking and Finance'),
+('Faculty of Management Sciences', 'Business Administration'),
+('Faculty of Management Sciences', 'Marketing'),
+('Faculty of Management Sciences', 'Public Administration'),
+
+-- Faculty of Science
+('Faculty of Science', 'Biochemistry'),
+('Faculty of Science', 'Biological Sciences'),
+('Faculty of Science', 'Chemistry'),
+('Faculty of Science', 'Computer Science'),
+('Faculty of Science', 'Geology'),
+('Faculty of Science', 'Mathematics'),
+('Faculty of Science', 'Microbiology'),
+('Faculty of Science', 'Physics'),
+('Faculty of Science', 'Statistics'),
+
+-- Faculty of Social Sciences
+('Faculty of Social Sciences', 'Economics'),
+('Faculty of Social Sciences', 'Geography'),
+('Faculty of Social Sciences', 'Mass Communication'),
+('Faculty of Social Sciences', 'Political Science'),
+('Faculty of Social Sciences', 'Psychology'),
+('Faculty of Social Sciences', 'Sociology and Anthropology');
+
+SELECT 'Faculties and departments seeded successfully!' as status;
