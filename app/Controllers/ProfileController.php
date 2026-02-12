@@ -226,7 +226,6 @@ class ProfileController extends Controller
                 'research_interests' => $this->sanitizeInput($this->input('research_interests')),
                 'expertise_keywords' => $this->sanitizeInput($this->input('expertise_keywords')),
                 'profile_visibility' => $registrationData['profile_visibility'] ?? 'public',
-                'allow_contact' => $this->input('allow_contact') ? 1 : 0,
                 'profile_slug' => $profileSlug,
             ];
 
