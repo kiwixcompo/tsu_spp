@@ -923,19 +923,33 @@ class ProfileController extends Controller
 
         $user = $this->getCurrentUser();
         try {
+            $publicationType = $this->sanitizeInput($this->input('publication_type'));
+            $journalConference = $this->sanitizeInput($this->input('journal_conference'));
+            
             $data = [
                 'user_id' => $user['id'],
                 'title' => $this->sanitizeInput($this->input('title')),
                 'authors' => $this->sanitizeInput($this->input('authors')),
-                'publication_type' => $this->sanitizeInput($this->input('publication_type')),
-                'journal_conference' => $this->sanitizeInput($this->input('journal_conference')),
-                'year' => $this->sanitizeInput($this->input('year')),
+                'publication_type' => $publicationType,
+                'publication_year' => $this->sanitizeInput($this->input('year')),
                 'volume' => $this->sanitizeInput($this->input('volume')),
+                'issue' => $this->sanitizeInput($this->input('issue')),
                 'pages' => $this->sanitizeInput($this->input('pages')),
                 'doi' => $this->sanitizeInput($this->input('doi')),
                 'url' => $this->sanitizeInput($this->input('url')),
                 'abstract' => $this->sanitizeInput($this->input('abstract')),
+                'publisher' => $this->sanitizeInput($this->input('publisher')),
             ];
+            
+            // Set journal_name or conference_name based on publication type
+            if (in_array($publicationType, ['journal', 'book', 'chapter', 'thesis'])) {
+                $data['journal_name'] = $journalConference;
+                $data['conference_name'] = null;
+            } else {
+                $data['journal_name'] = null;
+                $data['conference_name'] = $journalConference;
+            }
+            
             $this->db->insert('publications', $data);
             $this->json(['success' => true, 'message' => 'Publication added successfully']);
         } catch (\Exception $e) {
@@ -953,18 +967,32 @@ class ProfileController extends Controller
 
         $user = $this->getCurrentUser();
         try {
+            $publicationType = $this->sanitizeInput($this->input('publication_type'));
+            $journalConference = $this->sanitizeInput($this->input('journal_conference'));
+            
             $data = [
                 'title' => $this->sanitizeInput($this->input('title')),
                 'authors' => $this->sanitizeInput($this->input('authors')),
-                'publication_type' => $this->sanitizeInput($this->input('publication_type')),
-                'journal_conference' => $this->sanitizeInput($this->input('journal_conference')),
-                'year' => $this->sanitizeInput($this->input('year')),
+                'publication_type' => $publicationType,
+                'publication_year' => $this->sanitizeInput($this->input('year')),
                 'volume' => $this->sanitizeInput($this->input('volume')),
+                'issue' => $this->sanitizeInput($this->input('issue')),
                 'pages' => $this->sanitizeInput($this->input('pages')),
                 'doi' => $this->sanitizeInput($this->input('doi')),
                 'url' => $this->sanitizeInput($this->input('url')),
                 'abstract' => $this->sanitizeInput($this->input('abstract')),
+                'publisher' => $this->sanitizeInput($this->input('publisher')),
             ];
+            
+            // Set journal_name or conference_name based on publication type
+            if (in_array($publicationType, ['journal', 'book', 'chapter', 'thesis'])) {
+                $data['journal_name'] = $journalConference;
+                $data['conference_name'] = null;
+            } else {
+                $data['journal_name'] = null;
+                $data['conference_name'] = $journalConference;
+            }
+            
             $this->db->update('publications', $data, 'id = ? AND user_id = ?', [$id, $user['id']]);
             $this->json(['success' => true, 'message' => 'Publication updated successfully']);
         } catch (\Exception $e) {
