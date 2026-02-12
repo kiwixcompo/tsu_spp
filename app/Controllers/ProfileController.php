@@ -58,23 +58,24 @@ class ProfileController extends Controller
         }
 
         try {
-            $stmt = $this->db->query("SELECT faculty, department FROM departments ORDER BY faculty, department");
+            $stmt = $this->db->query("SELECT faculty_name, department_name FROM faculties_departments ORDER BY faculty_name, department_name");
             $data = $stmt->fetchAll();
             
             $faculties = [];
             foreach ($data as $row) {
-                $facultyName = $row['faculty'];
+                $facultyName = $row['faculty_name'];
                 if (!isset($faculties[$facultyName])) {
                     $faculties[$facultyName] = [
                         'name' => $facultyName,
                         'departments' => []
                     ];
                 }
-                $faculties[$facultyName]['departments'][] = $row['department'];
+                $faculties[$facultyName]['departments'][] = $row['department_name'];
             }
             
             return array_values($faculties);
         } catch (\Exception $e) {
+            error_log("Error fetching faculties: " . $e->getMessage());
             return [];
         }
     }
@@ -89,9 +90,10 @@ class ProfileController extends Controller
         }
 
         try {
-            $stmt = $this->db->query("SELECT unit_name FROM units_offices ORDER BY unit_name");
+            $stmt = $this->db->query("SELECT name FROM units_offices ORDER BY name");
             return $stmt->fetchAll(\PDO::FETCH_COLUMN);
         } catch (\Exception $e) {
+            error_log("Error fetching units: " . $e->getMessage());
             return [];
         }
     }
