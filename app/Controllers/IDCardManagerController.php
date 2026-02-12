@@ -73,9 +73,7 @@ class IDCardManagerController extends Controller
         
         $query .= " ORDER BY p.created_at DESC";
         
-        $stmt = $this->db->prepare($query);
-        $stmt->execute($params);
-        $profiles = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $profiles = $this->db->fetchAll($query, $params);
         
         // Get faculties for filter
         $faculties = $this->getFaculties();
@@ -100,7 +98,7 @@ class IDCardManagerController extends Controller
         $offset = ($page - 1) * $perPage;
         
         // Get print logs with pagination
-        $stmt = $this->db->prepare("
+        $logs = $this->db->fetchAll("
             SELECT l.*, 
                    p.first_name, p.last_name, p.staff_number,
                    u.email as printer_email
@@ -109,13 +107,11 @@ class IDCardManagerController extends Controller
             INNER JOIN users u ON l.user_id = u.id
             ORDER BY l.created_at DESC
             LIMIT ? OFFSET ?
-        ");
-        $stmt->execute([$perPage, $offset]);
-        $logs = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        ", [$perPage, $offset]);
         
         // Get total count
-        $totalStmt = $this->db->query("SELECT COUNT(*) FROM id_card_print_logs");
-        $total = $totalStmt->fetchColumn();
+        $totalResult = $this->db->fetch("SELECT COUNT(*) as total FROM id_card_print_logs");
+        $total = $totalResult['total'] ?? 0;
         $totalPages = ceil($total / $perPage);
         
         $this->view('id-card-manager/print-history', [

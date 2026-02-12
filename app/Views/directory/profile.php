@@ -57,10 +57,26 @@ if (!function_exists('safe_output')) {
                 <i class="fas fa-university me-2"></i>TSU Staff Profile Portal
             </a>
             <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="<?= url('directory') ?>">
-                    <i class="fas fa-arrow-left me-1"></i>Back to Directory
+                <?php
+                // Check if user is logged in and determine back URL
+                $backUrl = url('directory');
+                if (isset($_SESSION['user'])) {
+                    $userRole = $_SESSION['user']['role'] ?? 'user';
+                    if ($userRole === 'id_card_manager') {
+                        $backUrl = url('id-card-manager/dashboard');
+                    } elseif ($userRole === 'admin') {
+                        $backUrl = url('admin/dashboard');
+                    } elseif ($userRole === 'user') {
+                        $backUrl = url('dashboard');
+                    }
+                }
+                ?>
+                <a class="nav-link" href="<?= $backUrl ?>">
+                    <i class="fas fa-arrow-left me-1"></i>Back
                 </a>
+                <?php if (!isset($_SESSION['user'])): ?>
                 <a class="nav-link" href="<?= url('login') ?>">Login</a>
+                <?php endif; ?>
             </div>
         </div>
     </nav>
