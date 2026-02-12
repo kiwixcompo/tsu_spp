@@ -227,7 +227,7 @@ class DirectoryController extends Controller
             );
 
             $publications = $this->db->fetchAll(
-                "SELECT * FROM publications WHERE user_id = ? ORDER BY year DESC, title ASC LIMIT 10",
+                "SELECT * FROM publications WHERE user_id = ? ORDER BY publication_year DESC, title ASC LIMIT 10",
                 [$profile['user_id']]
             );
 
