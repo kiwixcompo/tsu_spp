@@ -185,18 +185,33 @@ class DirectoryController extends Controller
         }
 
         try {
-            // Get profile by slug
+            // First, check if profile exists (regardless of visibility)
             $profile = $this->db->fetch(
                 "SELECT p.*, u.email, u.created_at as user_created_at 
                  FROM profiles p 
                  JOIN users u ON p.user_id = u.id 
-                 WHERE p.profile_slug = ? AND p.profile_visibility = 'public' AND u.role != 'admin'",
+                 WHERE p.profile_slug = ? AND u.role != 'admin'",
                 [$slug]
             );
 
             if (!$profile) {
                 $this->view('errors/404');
                 return;
+            }
+
+            // Check if profile is private
+            if ($profile['profile_visibility'] !== 'public') {
+                // Check if viewing own profile
+                $currentUser = $this->getCurrentUser();
+                $isOwnProfile = $currentUser && $currentUser['id'] === $profile['user_id'];
+                
+                if (!$isOwnProfile) {
+                    // Show private profile message
+                    $this->view('directory/private-profile', [
+                        'profile' => $profile
+                    ]);
+                    return;
+                }
             }
 
             // Increment profile views (only if not viewing own profile)
