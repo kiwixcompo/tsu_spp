@@ -195,10 +195,12 @@ if (!function_exists('escape_attr')) {
                                     <option value="M.A">M.A</option>
                                     <option value="M.Ed">M.Ed</option>
                                     <option value="M.Tech">M.Tech</option>
+                                    <option value="M.Eng">M.Eng</option>
                                     <option value="MBA">MBA</option>
                                     <option value="B.Sc">B.Sc</option>
                                     <option value="B.A">B.A</option>
                                     <option value="B.Ed">B.Ed</option>
+                                    <option value="B.Eng">B.Eng</option>
                                     <option value="B.Tech">B.Tech</option>
                                     <option value="HND">HND</option>
                                     <option value="OND">OND</option>

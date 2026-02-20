@@ -161,6 +161,22 @@ if (!function_exists('url')) {
             font-size: 19px;
             margin: 0;
             line-height: 1.1;
+            word-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+        }
+        
+        /* Dynamic font sizing for long names */
+        .full-name.name-long {
+            font-size: 16px;
+        }
+        
+        .full-name.name-very-long {
+            font-size: 14px;
+        }
+        
+        .full-name.name-extra-long {
+            font-size: 12px;
         }
         
         .designation {
@@ -168,6 +184,7 @@ if (!function_exists('url')) {
             font-size: 13px;
             font-weight: 600;
             margin-top: 3px;
+            word-wrap: break-word;
         }
         
         /* Details Table */
@@ -386,16 +403,28 @@ if (!function_exists('url')) {
                             </div>
 
                             <div class="name-section">
-                                <h3 class="full-name">
-                                    <?php
-                                    $nameParts = array_filter([
-                                        $profile['title'] ?? '',
-                                        $profile['first_name'] ?? '',
-                                        $profile['middle_name'] ?? '',
-                                        $profile['last_name'] ?? ''
-                                    ]);
-                                    echo htmlspecialchars(trim(implode(' ', $nameParts)));
-                                    ?>
+                                <?php
+                                $nameParts = array_filter([
+                                    $profile['title'] ?? '',
+                                    $profile['first_name'] ?? '',
+                                    $profile['middle_name'] ?? '',
+                                    $profile['last_name'] ?? ''
+                                ]);
+                                $fullName = trim(implode(' ', $nameParts));
+                                $nameLength = strlen($fullName);
+                                
+                                // Determine name class based on length
+                                $nameClass = 'full-name';
+                                if ($nameLength > 30) {
+                                    $nameClass .= ' name-extra-long';
+                                } elseif ($nameLength > 25) {
+                                    $nameClass .= ' name-very-long';
+                                } elseif ($nameLength > 20) {
+                                    $nameClass .= ' name-long';
+                                }
+                                ?>
+                                <h3 class="<?= $nameClass ?>">
+                                    <?= htmlspecialchars($fullName) ?>
                                 </h3>
                                 <div class="designation"><?= htmlspecialchars($profile['designation'] ?? '') ?></div>
                             </div>
@@ -406,6 +435,12 @@ if (!function_exists('url')) {
                                         <td class="details-label">Staff ID:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['staff_number'] ?? 'N/A') ?></td>
                                     </tr>
+                                    <?php if ($profile['staff_type'] === 'non-teaching' && !empty($profile['unit'])): ?>
+                                    <tr>
+                                        <td class="details-label">Unit:</td>
+                                        <td class="details-value"><?= htmlspecialchars($profile['unit']) ?></td>
+                                    </tr>
+                                    <?php else: ?>
                                     <tr>
                                         <td class="details-label">Faculty:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['faculty'] ?? '') ?></td>
@@ -414,6 +449,7 @@ if (!function_exists('url')) {
                                         <td class="details-label">Dept:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['department'] ?? '') ?></td>
                                     </tr>
+                                    <?php endif; ?>
                                 </table>
                             </div>
 

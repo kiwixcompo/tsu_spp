@@ -327,6 +327,17 @@ if (!function_exists('url')) {
                 : '';
             const qrUrl = profile.qr_code_url || '';
 
+            // Calculate dynamic font size based on name length
+            const nameLength = fullName.length;
+            let nameFontSize = '18px';
+            if (nameLength > 30) {
+                nameFontSize = '14px';
+            } else if (nameLength > 25) {
+                nameFontSize = '15px';
+            } else if (nameLength > 20) {
+                nameFontSize = '16px';
+            }
+
             return `
                 <div class="id-card" style="width:350px;height:550px;border-radius:15px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.2);">
                     <div class="id-card-front" style="height:100%;display:flex;flex-direction:column;">
@@ -340,13 +351,16 @@ if (!function_exists('url')) {
                         </div>
                         <div style="padding:15px 20px;flex-grow:1;display:flex;flex-direction:column;justify-content:space-between;">
                             <div style="text-align:center;">
-                                <h4 style="font-size:18px;font-weight:bold;color:#1e40af;margin-bottom:5px;line-height:1.3;word-wrap:break-word;">${fullName}</h4>
+                                <h4 style="font-size:${nameFontSize};font-weight:bold;color:#1e40af;margin-bottom:5px;line-height:1.3;word-wrap:break-word;word-break:break-word;hyphens:auto;">${fullName}</h4>
                                 <div style="color:#666;font-size:12px;margin-bottom:12px;font-weight:500;line-height:1.4;word-wrap:break-word;">${profile.designation || ''}</div>
                             </div>
                             <div style="font-size:11px;line-height:1.6;">
                                 <div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Staff ID:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;">${staffId}</div></div>
-                                <div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Faculty:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;">${profile.faculty || ''}</div></div>
-                                <div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Department:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;">${profile.department || ''}</div></div>
+                                ${profile.staff_type === 'non-teaching' && profile.unit ? 
+                                    `<div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Unit:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;">${profile.unit}</div></div>` :
+                                    `<div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Faculty:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;">${profile.faculty || ''}</div></div>
+                                    <div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Department:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;">${profile.department || ''}</div></div>`
+                                }
                                 <div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Email:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;font-size:10px;">${profile.email || ''}</div></div>
                             </div>
                         </div>
