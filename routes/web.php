@@ -106,6 +106,10 @@ $router->get('/admin/faculties-departments', 'AdminController@facultiesDepartmen
 $router->post('/admin/add-faculty', 'AdminController@addFaculty', ['Auth', 'Admin']);
 $router->post('/admin/add-department', 'AdminController@addDepartment', ['Auth', 'Admin']);
 $router->delete('/admin/delete-department', 'AdminController@deleteDepartment', ['Auth', 'Admin']);
+$router->get('/admin/units', 'AdminController@unitsManagement', ['Auth', 'Admin']);
+$router->post('/admin/units/add', 'AdminController@addUnit', ['Auth', 'Admin']);
+$router->post('/admin/units/update', 'AdminController@updateUnit', ['Auth', 'Admin']);
+$router->post('/admin/units/delete', 'AdminController@deleteUnit', ['Auth', 'Admin']);
 $router->get('/admin/settings', 'AdminController@settings', ['Auth', 'Admin']);
 $router->post('/admin/settings', 'AdminController@updateSettings', ['Auth', 'Admin']);
 

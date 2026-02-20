@@ -356,10 +356,11 @@ if (!function_exists('url')) {
                             </div>
                             <div style="font-size:11px;line-height:1.6;">
                                 <div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Staff ID:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;">${staffId}</div></div>
-                                ${profile.staff_type === 'non-teaching' && profile.unit ? 
+                                ${(profile.staff_type === 'non-teaching' && profile.unit && profile.unit.trim() !== '') ? 
                                     `<div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Unit:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;">${profile.unit}</div></div>` :
-                                    `<div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Faculty:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;">${profile.faculty || ''}</div></div>
-                                    <div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Department:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;">${profile.department || ''}</div></div>`
+                                    ((profile.faculty && profile.faculty.trim() !== '') || (profile.department && profile.department.trim() !== '')) ?
+                                    `${profile.faculty && profile.faculty.trim() !== '' ? `<div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Faculty:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;">${profile.faculty}</div></div>` : ''}
+                                    ${profile.department && profile.department.trim() !== '' ? `<div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Department:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;">${profile.department}</div></div>` : ''}` : ''
                                 }
                                 <div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Email:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;font-size:10px;">${profile.email || ''}</div></div>
                             </div>

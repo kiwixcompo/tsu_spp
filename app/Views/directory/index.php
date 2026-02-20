@@ -234,7 +234,15 @@ if (!function_exists('safe_output')) {
                                             <p class="text-muted mb-2"><?= htmlspecialchars($profile['designation'] ?? 'Staff Member') ?></p>
                                             <p class="text-muted small mb-0">
                                                 <i class="fas fa-building me-1"></i>
-                                                <?= htmlspecialchars($profile['department'] ?? 'N/A') ?>
+                                                <?php 
+                                                if (!empty($profile['unit'])) {
+                                                    echo htmlspecialchars($profile['unit']);
+                                                } elseif (!empty($profile['department'])) {
+                                                    echo htmlspecialchars($profile['department']);
+                                                } else {
+                                                    echo 'N/A';
+                                                }
+                                                ?>
                                             </p>
                                         </div>
                                     </div>

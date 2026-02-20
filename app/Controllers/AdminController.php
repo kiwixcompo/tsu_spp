@@ -1351,4 +1351,130 @@ class AdminController extends Controller
             exit;
         }
     }
+
+    /**
+     * Units Management Page
+     */
+    public function unitsManagement(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        $units = $this->getAllUnits();
+
+        $this->view('admin/units-management', [
+            'units' => $units,
+            'csrf_token' => $this->generateCSRFToken(),
+        ]);
+    }
+
+    /**
+     * Get all units
+     */
+    private function getAllUnits(): array
+    {
+        if (!$this->db) {
+            return [];
+        }
+
+        try {
+            return $this->db->fetchAll("
+                SELECT id, name, type, created_at
+                FROM units_offices
+                ORDER BY name
+            ");
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Add a new unit
+     */
+    public function addUnit(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $name = $this->sanitizeInput($this->input('name'));
+        $type = $this->sanitizeInput($this->input('type')) ?: 'unit';
+
+        if (empty($name)) {
+            $this->json(['error' => 'Unit name is required'], 422);
+            return;
+        }
+
+        try {
+            $this->db->insert('units_offices', [
+                'name' => $name,
+                'type' => $type
+            ]);
+
+            $this->json(['success' => true, 'message' => 'Unit added successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to add unit'], 500);
+        }
+    }
+
+    /**
+     * Update a unit
+     */
+    public function updateUnit(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $id = (int)$this->input('id');
+        $name = $this->sanitizeInput($this->input('name'));
+        $type = $this->sanitizeInput($this->input('type')) ?: 'unit';
+
+        if (empty($name)) {
+            $this->json(['error' => 'Unit name is required'], 422);
+            return;
+        }
+
+        try {
+            $this->db->update('units_offices', [
+                'name' => $name,
+                'type' => $type
+            ], 'id = ?', [$id]);
+
+            $this->json(['success' => true, 'message' => 'Unit updated successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to update unit'], 500);
+        }
+    }
+
+    /**
+     * Delete a unit
+     */
+    public function deleteUnit(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $id = (int)$this->input('id');
+
+        try {
+            $this->db->delete('units_offices', 'id = ?', [$id]);
+            $this->json(['success' => true, 'message' => 'Unit deleted successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to delete unit'], 500);
+        }
+    }
 }
