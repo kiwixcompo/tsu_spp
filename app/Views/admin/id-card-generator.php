@@ -363,9 +363,9 @@ if (!function_exists('url')) {
                                     
                                     // Show Unit if it exists and no faculty/department
                                     if (hasUnit && !hasFaculty && !hasDepartment) {
-                                        return `<div style="text-align:center;padding:15px 10px 10px 10px;margin-left:55px;">
-                                            <div style="font-size:10px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">UNIT</div>
-                                            <div style="font-size:14px;font-weight:800;color:#1e3a8a;line-height:1.2;word-wrap:break-word;hyphens:auto;">${profile.unit}</div>
+                                        return `<div style="display:flex;margin-bottom:6px;margin-top:10px;align-items:flex-start;">
+                                            <div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Unit:</div>
+                                            <div style="font-size:14px;font-weight:800;color:#1e3a8a;flex-grow:1;word-wrap:break-word;line-height:1.3;hyphens:auto;">${profile.unit}</div>
                                         </div>`;
                                     } else {
                                         // Show Faculty/Department only if they exist

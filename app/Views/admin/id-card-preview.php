@@ -445,15 +445,15 @@ if (!function_exists('url')) {
                                         <td class="details-label">Staff ID:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['staff_number'] ?? 'N/A') ?></td>
                                     </tr>
+                                    <tr>
+                                        <td class="details-label" style="vertical-align: top; padding-top: 10px;">Unit:</td>
+                                        <td class="details-value" style="padding-top: 10px;">
+                                            <div style="font-size: 14px; font-weight: 800; color: #1e3a8a; line-height: 1.3; word-wrap: break-word; hyphens: auto;">
+                                                <?= htmlspecialchars($profile['unit']) ?>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </table>
-                                <div style="text-align: center; padding: 15px 10px 10px 10px; margin-left: 55px;">
-                                    <div style="font-size: 10px; font-weight: 700; color: #1e40af; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">
-                                        UNIT
-                                    </div>
-                                    <div style="font-size: 14px; font-weight: 800; color: #1e3a8a; line-height: 1.2; word-wrap: break-word; hyphens: auto;">
-                                        <?= htmlspecialchars($profile['unit']) ?>
-                                    </div>
-                                </div>
                                 <?php else: ?>
                                 <!-- Standard table layout for Faculty/Department -->
                                 <table class="details-table">
