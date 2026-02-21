@@ -357,10 +357,11 @@ if (!function_exists('url')) {
                                     
                                     // Show Unit if it exists and no faculty/department
                                     if (hasUnit && !hasFaculty && !hasDepartment) {
-                                        return `<div style="display:flex;margin-bottom:2px;align-items:flex-start;">
-                                            <div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Unit:</div>
+                                        return `
+                                        <div style="text-align:center; margin-top: 6px; margin-bottom: 2px;">
+                                            <span style="font-weight:bold;color:#666;">Unit:</span>
                                         </div>
-                                        <div style="display:flex;justify-content:center;margin-bottom:8px;padding:4px 10px;">
+                                        <div style="display:flex;justify-content:center;margin-bottom:8px;padding:2px 10px;">
                                             <div style="font-size:14px;font-weight:800;color:#1e3a8a;text-align:center;word-wrap:break-word;line-height:1.2;text-transform:uppercase;">${profile.unit}</div>
                                         </div>`;
                                     } else {
@@ -375,7 +376,6 @@ if (!function_exists('url')) {
                                         return output;
                                     }
                                 })()}
-                                <div style="display:flex;margin-bottom:6px;align-items:flex-start;"><div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Email:</div><div style="color:#333;flex-grow:1;word-wrap:break-word;line-height:1.4;font-size:10px;">${profile.email || ''}</div></div>
                             </div>
                         </div>
                         <div style="background:#1e40af;color:#fff;text-align:center;padding:10px;font-size:10px;">
