@@ -342,7 +342,6 @@ class IDCardManagerController extends Controller
             $stmt->execute([$value, $key]);
         }
     }
-}
 
     /**
      * Preview ID card for a specific user

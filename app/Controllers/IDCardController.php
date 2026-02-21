@@ -341,8 +341,6 @@ class IDCardController extends Controller
             exit;
         }
     }
-}
-
 
     /**
      * Show generated ID cards (Admin view)
