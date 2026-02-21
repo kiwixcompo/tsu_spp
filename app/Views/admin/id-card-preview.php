@@ -439,23 +439,21 @@ if (!function_exists('url')) {
                                 // Show Unit if it exists and no faculty/department
                                 if ($hasUnit && !$hasFaculty && !$hasDepartment): 
                                 ?>
-                                <!-- Special layout for Unit only -->
                                 <table class="details-table">
                                     <tr>
                                         <td class="details-label">Staff ID:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['staff_number'] ?? 'N/A') ?></td>
                                     </tr>
                                     <tr>
-                                        <td class="details-label" style="vertical-align: top; padding-top: 10px;">Unit:</td>
-                                        <td class="details-value" style="padding-top: 10px;">
-                                            <div style="font-size: 14px; font-weight: 800; color: #1e3a8a; line-height: 1.3; word-wrap: break-word; hyphens: auto;">
+                                        <td class="details-label" style="vertical-align: top; padding-top: 15px;">Unit:</td>
+                                        <td class="details-value" style="padding-top: 15px; text-align: center;">
+                                            <div style="font-size: 15px; font-weight: 800; color: #1e3a8a; line-height: 1.3; word-wrap: break-word; hyphens: auto;">
                                                 <?= htmlspecialchars($profile['unit']) ?>
                                             </div>
                                         </td>
                                     </tr>
                                 </table>
                                 <?php else: ?>
-                                <!-- Standard table layout for Faculty/Department -->
                                 <table class="details-table">
                                     <tr>
                                         <td class="details-label">Staff ID:</td>

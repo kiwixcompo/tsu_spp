@@ -56,7 +56,6 @@ if (!function_exists('url')) {
 <body>
     <div class="container-fluid">
         <div class="row">
-            <!-- Sidebar -->
             <div class="col-md-3 col-lg-2 sidebar p-0">
                 <div class="p-3">
                     <div class="text-center mb-4">
@@ -91,9 +90,7 @@ if (!function_exists('url')) {
                 </div>
             </div>
 
-            <!-- Main Content -->
             <div class="col-md-9 col-lg-10 main-content">
-                <!-- Header -->
                 <div class="bg-white border-bottom p-3 mb-4">
                     <div class="row align-items-center">
                         <div class="col">
@@ -106,7 +103,6 @@ if (!function_exists('url')) {
                 </div>
 
                 <div class="p-4">
-                    <!-- Search Box -->
                     <div class="card mb-4">
                         <div class="card-body">
                             <div class="search-box">
@@ -126,14 +122,12 @@ if (!function_exists('url')) {
                         </div>
                     </div>
 
-                    <!-- Info Alert -->
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
                         <strong>How it works:</strong> Click on any staff member to generate their ID card. 
                         The ID card includes their photo, details, and a QR code that links to their profile.
                     </div>
 
-                    <!-- Users Grid -->
                     <div class="row" id="usersGrid">
                         <?php if (empty($users)): ?>
                             <div class="col-12">
@@ -363,9 +357,9 @@ if (!function_exists('url')) {
                                     
                                     // Show Unit if it exists and no faculty/department
                                     if (hasUnit && !hasFaculty && !hasDepartment) {
-                                        return `<div style="display:flex;margin-bottom:6px;margin-top:10px;align-items:flex-start;">
-                                            <div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Unit:</div>
-                                            <div style="font-size:14px;font-weight:800;color:#1e3a8a;flex-grow:1;word-wrap:break-word;line-height:1.3;hyphens:auto;">${profile.unit}</div>
+                                        return `<div style="display:flex;margin-bottom:6px;margin-top:15px;align-items:center;">
+                                                <div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;align-self: flex-start;">Unit:</div>
+                                                <div style="font-size:15px;font-weight:800;color:#1e3a8a;flex-grow:1;text-align:center;word-wrap:break-word;line-height:1.3;hyphens:auto;">${profile.unit}</div>
                                         </div>`;
                                     } else {
                                         // Show Faculty/Department only if they exist
@@ -439,7 +433,7 @@ if (!function_exists('url')) {
             pdf.addImage(backImg, 'PNG', 0, 0, 3.5, 5.5);
 
             const staffId = profile.staff_number || ('TSU-' + String(profile.id).padStart(5, '0'));
-            const fileSafeName = `${staffId}_${(profile.first_name || '').trim()}_${(profile.last_name || '').trim()}`.replace(/\\s+/g, '_').replace(/[^A-Za-z0-9_\\-]/g, '');
+            const fileSafeName = `${staffId}_${(profile.first_name || '').trim()}_${(profile.last_name || '').trim()}`.replace(/\s+/g, '_').replace(/[^A-Za-z0-9_\-]/g, '');
             pdf.save(`IDCard_${fileSafeName}.pdf`);
         }
 
