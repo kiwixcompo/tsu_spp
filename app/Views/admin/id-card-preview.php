@@ -435,20 +435,26 @@ if (!function_exists('url')) {
                                         <td class="details-label">Staff ID:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['staff_number'] ?? 'N/A') ?></td>
                                     </tr>
-                                    <?php if ($profile['staff_type'] === 'non-teaching' && !empty($profile['unit'])): ?>
+                                    <?php if (!empty($profile['unit']) && empty($profile['faculty']) && empty($profile['department'])): ?>
+                                    <!-- Show Unit only if no faculty/department -->
                                     <tr>
                                         <td class="details-label">Unit:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['unit']) ?></td>
                                     </tr>
                                     <?php else: ?>
+                                    <!-- Show Faculty/Department if they exist -->
+                                    <?php if (!empty($profile['faculty'])): ?>
                                     <tr>
                                         <td class="details-label">Faculty:</td>
-                                        <td class="details-value"><?= htmlspecialchars($profile['faculty'] ?? '') ?></td>
+                                        <td class="details-value"><?= htmlspecialchars($profile['faculty']) ?></td>
                                     </tr>
+                                    <?php endif; ?>
+                                    <?php if (!empty($profile['department'])): ?>
                                     <tr>
                                         <td class="details-label">Dept:</td>
-                                        <td class="details-value"><?= htmlspecialchars($profile['department'] ?? '') ?></td>
+                                        <td class="details-value"><?= htmlspecialchars($profile['department']) ?></td>
                                     </tr>
+                                    <?php endif; ?>
                                     <?php endif; ?>
                                 </table>
                             </div>
