@@ -30,7 +30,7 @@ class IDCardController extends Controller
             $users = $this->db->fetchAll("
                 SELECT u.id, u.email, 
                        p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
-                       p.designation, p.faculty, p.department, p.profile_photo, 
+                       p.designation, p.faculty, p.department, p.unit, p.staff_type, p.profile_photo, 
                        p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
                 FROM users u
                 INNER JOIN profiles p ON u.id = p.user_id
@@ -62,7 +62,7 @@ class IDCardController extends Controller
         $profile = $this->db->fetch("
             SELECT u.id, u.email, 
                    p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
-                   p.designation, p.faculty, p.department, p.profile_photo, 
+                   p.designation, p.faculty, p.department, p.unit, p.staff_type, p.profile_photo, 
                    p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
             FROM users u
             INNER JOIN profiles p ON u.id = p.user_id
@@ -107,7 +107,7 @@ class IDCardController extends Controller
         $profile = $this->db->fetch("
             SELECT u.id, u.email, 
                    p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
-                   p.designation, p.faculty, p.department, p.profile_photo, 
+                   p.designation, p.faculty, p.department, p.unit, p.staff_type, p.profile_photo, 
                    p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
             FROM users u
             INNER JOIN profiles p ON u.id = p.user_id
@@ -255,7 +255,7 @@ class IDCardController extends Controller
         $profiles = $this->db->fetchAll("
             SELECT u.id, u.email, 
                    p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
-                   p.designation, p.faculty, p.department, p.profile_photo, 
+                   p.designation, p.faculty, p.department, p.unit, p.staff_type, p.profile_photo, 
                    p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
             FROM users u
             INNER JOIN profiles p ON u.id = p.user_id
