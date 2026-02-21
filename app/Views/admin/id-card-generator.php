@@ -151,23 +151,23 @@ if (!function_exists('url')) {
                                                 </div>
                                                 <div class="me-3">
                                                     <?php if (!empty($user['profile_photo'])): ?>
-                                                            <?php
-                                                            $photoPath = $user['profile_photo'];
-                                                            if (strpos($photoPath, 'uploads/') === 0 || strpos($photoPath, '/uploads/') === 0) {
-                                                                $photoUrl = url($photoPath);
-                                                            } else {
-                                                                $photoUrl = asset('uploads/profiles/' . $photoPath);
-                                                            }
-                                                            $initials = strtoupper(substr($user['first_name'], 0, 1) . substr($user['last_name'], 0, 1));
-                                                            ?>
-                                                            <img src="<?= $photoUrl ?>" 
-                                                                 alt="Photo" 
-                                                                 class="user-photo"
-                                                                 onerror="this.replaceWith(createPlaceholder('<?= $initials ?>'))">
+                                                        <?php
+                                                        $photoPath = $user['profile_photo'];
+                                                        if (strpos($photoPath, 'uploads/') === 0 || strpos($photoPath, '/uploads/') === 0) {
+                                                            $photoUrl = url($photoPath);
+                                                        } else {
+                                                            $photoUrl = asset('uploads/profiles/' . $photoPath);
+                                                        }
+                                                        $initials = strtoupper(substr($user['first_name'], 0, 1) . substr($user['last_name'], 0, 1));
+                                                        ?>
+                                                        <img src="<?= $photoUrl ?>" 
+                                                             alt="Photo" 
+                                                             class="user-photo"
+                                                             onerror="this.replaceWith(createPlaceholder('<?= $initials ?>'))">
                                                     <?php else: ?>
-                                                            <div class="user-photo bg-primary text-white d-flex align-items-center justify-content-center">
-                                                                <strong><?= strtoupper(substr($user['first_name'], 0, 1) . substr($user['last_name'], 0, 1)) ?></strong>
-                                                            </div>
+                                                        <div class="user-photo bg-primary text-white d-flex align-items-center justify-content-center">
+                                                            <strong><?= strtoupper(substr($user['first_name'], 0, 1) . substr($user['last_name'], 0, 1)) ?></strong>
+                                                        </div>
                                                     <?php endif; ?>
                                                 </div>
                                                 <div class="flex-grow-1">
@@ -316,7 +316,7 @@ if (!function_exists('url')) {
             const fullName = nameParts.join(' ');
             const photoUrl = profile.profile_photo
                 ? ((profile.profile_photo.startsWith('uploads/') || profile.profile_photo.startsWith('/uploads/'))
-                    ? '<?= url('') ?>/' + profile.profile_photo.replace(/^\\/?/, '')
+                    ? '<?= url('') ?>/' + profile.profile_photo.replace(/^\/?/, '')
                     : '<?= asset('uploads/profiles') ?>/' + profile.profile_photo)
                 : '';
             const qrUrl = profile.qr_code_url || '';
@@ -357,9 +357,11 @@ if (!function_exists('url')) {
                                     
                                     // Show Unit if it exists and no faculty/department
                                     if (hasUnit && !hasFaculty && !hasDepartment) {
-                                        return `<div style="display:flex;margin-bottom:6px;margin-top:15px;align-items:center;">
-                                                <div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;align-self: flex-start;">Unit:</div>
-                                                <div style="font-size:15px;font-weight:800;color:#1e3a8a;flex-grow:1;text-align:center;word-wrap:break-word;line-height:1.3;hyphens:auto;">${profile.unit}</div>
+                                        return `<div style="display:flex;margin-bottom:2px;align-items:flex-start;">
+                                            <div style="font-weight:bold;color:#666;width:85px;flex-shrink:0;">Unit:</div>
+                                        </div>
+                                        <div style="display:flex;justify-content:center;margin-bottom:8px;padding:4px 10px;">
+                                            <div style="font-size:14px;font-weight:800;color:#1e3a8a;text-align:center;word-wrap:break-word;line-height:1.2;text-transform:uppercase;">${profile.unit}</div>
                                         </div>`;
                                     } else {
                                         // Show Faculty/Department only if they exist

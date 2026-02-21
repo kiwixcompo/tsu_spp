@@ -439,20 +439,21 @@ if (!function_exists('url')) {
                                 // Show Unit if it exists and no faculty/department
                                 if ($hasUnit && !$hasFaculty && !$hasDepartment): 
                                 ?>
-                                <table class="details-table">
+                                <table class="details-table" style="margin-bottom: 2px;">
                                     <tr>
                                         <td class="details-label">Staff ID:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['staff_number'] ?? 'N/A') ?></td>
                                     </tr>
                                     <tr>
-                                        <td class="details-label" style="vertical-align: top; padding-top: 15px;">Unit:</td>
-                                        <td class="details-value" style="padding-top: 15px; text-align: center;">
-                                            <div style="font-size: 15px; font-weight: 800; color: #1e3a8a; line-height: 1.3; word-wrap: break-word; hyphens: auto;">
-                                                <?= htmlspecialchars($profile['unit']) ?>
-                                            </div>
-                                        </td>
+                                        <td class="details-label" style="padding-top: 6px;">Unit:</td>
+                                        <td class="details-value"></td>
                                     </tr>
                                 </table>
+                                <div style="display: flex; justify-content: center; align-items: center; min-height: 35px; margin-bottom: 5px; padding: 0 10px;">
+                                    <div style="font-size: 15px; font-weight: 800; color: #1e3a8a; text-align: center; line-height: 1.2; text-transform: uppercase;">
+                                        <?= htmlspecialchars($profile['unit']) ?>
+                                    </div>
+                                </div>
                                 <?php else: ?>
                                 <table class="details-table">
                                     <tr>
