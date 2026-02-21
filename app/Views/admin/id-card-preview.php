@@ -430,29 +430,37 @@ if (!function_exists('url')) {
                             </div>
 
                             <div class="details-section">
+                                <?php 
+                                // Determine what to show: Unit OR Faculty/Department
+                                $hasUnit = !empty($profile['unit']) && trim($profile['unit']) !== '';
+                                $hasFaculty = !empty($profile['faculty']) && trim($profile['faculty']) !== '';
+                                $hasDepartment = !empty($profile['department']) && trim($profile['department']) !== '';
+                                
+                                // Show Unit if it exists and no faculty/department
+                                if ($hasUnit && !$hasFaculty && !$hasDepartment): 
+                                ?>
+                                <!-- Special layout for Unit only -->
                                 <table class="details-table">
                                     <tr>
                                         <td class="details-label">Staff ID:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['staff_number'] ?? 'N/A') ?></td>
                                     </tr>
-                                    <?php 
-                                    // Determine what to show: Unit OR Faculty/Department
-                                    $hasUnit = !empty($profile['unit']) && trim($profile['unit']) !== '';
-                                    $hasFaculty = !empty($profile['faculty']) && trim($profile['faculty']) !== '';
-                                    $hasDepartment = !empty($profile['department']) && trim($profile['department']) !== '';
-                                    
-                                    // Show Unit if it exists and no faculty/department
-                                    if ($hasUnit && !$hasFaculty && !$hasDepartment): 
-                                    ?>
+                                </table>
+                                <div style="text-align: center; padding: 15px 10px 10px 10px; margin-left: 55px;">
+                                    <div style="font-size: 10px; font-weight: 700; color: #1e40af; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">
+                                        UNIT
+                                    </div>
+                                    <div style="font-size: 14px; font-weight: 800; color: #1e3a8a; line-height: 1.2; word-wrap: break-word; hyphens: auto;">
+                                        <?= htmlspecialchars($profile['unit']) ?>
+                                    </div>
+                                </div>
+                                <?php else: ?>
+                                <!-- Standard table layout for Faculty/Department -->
+                                <table class="details-table">
                                     <tr>
-                                        <td class="details-label">Unit:</td>
-                                        <td class="details-value"><?= htmlspecialchars($profile['unit']) ?></td>
+                                        <td class="details-label">Staff ID:</td>
+                                        <td class="details-value"><?= htmlspecialchars($profile['staff_number'] ?? 'N/A') ?></td>
                                     </tr>
-                                    <!-- Add spacing rows to fill the space -->
-                                    <tr style="height: 10px;"><td colspan="2"></td></tr>
-                                    <tr style="height: 10px;"><td colspan="2"></td></tr>
-                                    <?php else: ?>
-                                    <!-- Show Faculty/Department only if they exist -->
                                     <?php if ($hasFaculty): ?>
                                     <tr>
                                         <td class="details-label">Faculty:</td>
@@ -465,8 +473,8 @@ if (!function_exists('url')) {
                                         <td class="details-value"><?= htmlspecialchars($profile['department']) ?></td>
                                     </tr>
                                     <?php endif; ?>
-                                    <?php endif; ?>
                                 </table>
+                                <?php endif; ?>
                             </div>
 
                             <div class="card-footer">
