@@ -342,3 +342,42 @@ class IDCardController extends Controller
         }
     }
 }
+
+
+    /**
+     * Show generated ID cards (Admin view)
+     */
+    public function generatedCards(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        $page = (int)($this->input('page') ?: 1);
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+
+        // Get profiles with generated ID cards
+        $profiles = $this->db->fetchAll("
+            SELECT p.*, u.email, p.id_card_generated_at,
+                   gen_by.email as generated_by_email,
+                   CONCAT(gen_profile.first_name, ' ', gen_profile.last_name) as generated_by_name
+            FROM profiles p
+            INNER JOIN users u ON p.user_id = u.id
+            LEFT JOIN users gen_by ON p.id_card_generated_by = gen_by.id
+            LEFT JOIN profiles gen_profile ON gen_by.id = gen_profile.user_id
+            WHERE p.id_card_generated = 1
+            ORDER BY p.id_card_generated_at DESC
+            LIMIT ? OFFSET ?
+        ", [$limit, $offset]);
+
+        $totalGenerated = $this->db->fetch("SELECT COUNT(*) as count FROM profiles WHERE id_card_generated = 1")['count'];
+        $totalPages = ceil($totalGenerated / $limit);
+
+        $this->view('admin/generated-cards', [
+            'profiles' => $profiles,
+            'current_page' => $page,
+            'total_pages' => $totalPages,
+            'total_generated' => $totalGenerated,
+        ]);
+    }
+}

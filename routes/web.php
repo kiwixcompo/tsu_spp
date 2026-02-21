@@ -73,6 +73,7 @@ $router->post('/upload/document', 'UploadController@document', ['Auth']);
 
 // Public profile routes
 $router->get('/profile/{slug}', 'DirectoryController@show');
+$router->get('/directory/profile/{slug}', 'DirectoryController@show');
 $router->get('/profile/{slug}/vcard', 'ProfileController@downloadVCard');
 
 // Settings routes
@@ -116,6 +117,7 @@ $router->post('/admin/settings', 'AdminController@updateSettings', ['Auth', 'Adm
 // ID Card routes (Admin only)
 $router->get('/admin/id-cards', 'IDCardController@index', ['Auth', 'Admin']);
 $router->get('/admin/id-cards/preview/{id}', 'IDCardController@preview', ['Auth', 'Admin']);
+$router->get('/admin/id-cards/generated', 'IDCardController@generatedCards', ['Auth', 'Admin']);
 $router->post('/admin/id-cards/generate/{id}', 'IDCardController@generate', ['Auth', 'Admin']);
 $router->post('/admin/id-cards/regenerate-qr/{id}', 'IDCardController@regenerateQR', ['Auth', 'Admin']);
 $router->post('/admin/id-cards/bulk-generate', 'IDCardController@bulkGenerate', ['Auth', 'Admin']);
@@ -131,8 +133,11 @@ $router->get('/health', 'UtilityController@healthCheck');
 // ID Card Manager routes (for id_card_manager role and admin)
 $router->get('/id-card-manager/dashboard', 'IDCardManagerController@dashboard', ['Auth', 'IDCardManager']);
 $router->get('/id-card-manager/browse', 'IDCardManagerController@browse', ['Auth', 'IDCardManager']);
+$router->get('/id-card-manager/preview/{id}', 'IDCardManagerController@preview', ['Auth', 'IDCardManager']);
 $router->get('/id-card-manager/print-history', 'IDCardManagerController@printHistory', ['Auth', 'IDCardManager']);
 $router->post('/id-card-manager/bulk-print', 'IDCardManagerController@bulkPrint', ['Auth', 'IDCardManager']);
+$router->post('/id-card-manager/print-single', 'IDCardManagerController@printSingle', ['Auth', 'IDCardManager']);
+$router->get('/id-card-manager/generated-cards', 'IDCardManagerController@generatedCards', ['Auth', 'IDCardManager']);
 $router->get('/id-card-manager/settings', 'IDCardManagerController@settings', ['Auth', 'IDCardManager']);
 $router->post('/id-card-manager/settings', 'IDCardManagerController@settings', ['Auth', 'IDCardManager']);
 

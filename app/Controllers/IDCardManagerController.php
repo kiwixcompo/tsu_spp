@@ -343,3 +343,144 @@ class IDCardManagerController extends Controller
         }
     }
 }
+
+    /**
+     * Preview ID card for a specific user
+     */
+    public function preview(int $userId): void
+    {
+        $this->requireAuth();
+
+        if (!$this->db) {
+            $this->redirect('id-card-manager/dashboard');
+            return;
+        }
+
+        // Get user profile
+        $profile = $this->db->fetch("
+            SELECT u.id, u.email, 
+                   p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
+                   p.designation, p.faculty, p.department, p.unit, p.staff_type, p.profile_photo, 
+                   p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
+            FROM users u
+            INNER JOIN profiles p ON u.id = p.user_id
+            WHERE u.id = ?
+        ", [$userId]);
+
+        if (!$profile) {
+            $this->redirect('id-card-manager/dashboard');
+            return;
+        }
+
+        // Ensure QR code exists
+        $qrCodeUrl = $this->ensureQRCodeExists($userId, $profile['profile_slug'], $profile['qr_code_path']);
+
+        // Mark ID card as generated
+        $this->db->update('profiles', [
+            'id_card_generated' => 1,
+            'id_card_generated_at' => date('Y-m-d H:i:s'),
+            'id_card_generated_by' => $_SESSION['user_id'] ?? null
+        ], 'user_id = ?', [$userId]);
+
+        // Decode HTML entities
+        $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'unit', 'designation', 'staff_number', 'email', 'blood_group'];
+        foreach ($textFields as $field) {
+            if (isset($profile[$field])) {
+                $profile[$field] = html_entity_decode($profile[$field], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+        }
+
+        $this->view('admin/id-card-preview', [
+            'profile' => $profile,
+            'qr_code_url' => $qrCodeUrl,
+        ]);
+    }
+
+    /**
+     * Print single ID card
+     */
+    public function printSingle(): void
+    {
+        $this->requireAuth();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $userId = $this->input('user_id');
+        if (!$userId) {
+            $this->json(['error' => 'User ID required'], 400);
+            return;
+        }
+
+        // Redirect to preview page
+        $this->json(['success' => true, 'redirect' => url("id-card-manager/preview/{$userId}")]);
+    }
+
+    /**
+     * Show generated ID cards
+     */
+    public function generatedCards(): void
+    {
+        $this->requireAuth();
+
+        $page = (int)($this->input('page') ?: 1);
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+
+        // Get profiles with generated ID cards
+        $profiles = $this->db->fetchAll("
+            SELECT p.*, u.email, p.id_card_generated_at,
+                   gen_by.email as generated_by_email,
+                   CONCAT(gen_profile.first_name, ' ', gen_profile.last_name) as generated_by_name
+            FROM profiles p
+            INNER JOIN users u ON p.user_id = u.id
+            LEFT JOIN users gen_by ON p.id_card_generated_by = gen_by.id
+            LEFT JOIN profiles gen_profile ON gen_by.id = gen_profile.user_id
+            WHERE p.id_card_generated = 1
+            ORDER BY p.id_card_generated_at DESC
+            LIMIT ? OFFSET ?
+        ", [$limit, $offset]);
+
+        $totalGenerated = $this->db->fetch("SELECT COUNT(*) as count FROM profiles WHERE id_card_generated = 1")['count'];
+        $totalPages = ceil($totalGenerated / $limit);
+
+        $this->view('id-card-manager/generated-cards', [
+            'profiles' => $profiles,
+            'current_page' => $page,
+            'total_pages' => $totalPages,
+            'total_generated' => $totalGenerated,
+        ]);
+    }
+
+    /**
+     * Ensure QR code exists (copied from IDCardController)
+     */
+    private function ensureQRCodeExists($userId, $slug, $currentPath)
+    {
+        require_once __DIR__ . '/../Helpers/QRCodeHelper.php';
+        
+        $qrHelper = new \App\Helpers\QRCodeHelper();
+        $profileUrl = url("directory/profile/{$slug}");
+        
+        $uploadsDir = __DIR__ . '/../../public/uploads/qrcodes';
+        if (!is_dir($uploadsDir)) {
+            mkdir($uploadsDir, 0755, true);
+        }
+        
+        $filename = "qr_user_{$userId}.png";
+        $filepath = $uploadsDir . '/' . $filename;
+        
+        if (!file_exists($filepath) || empty($currentPath)) {
+            $qrHelper->generateQRCode($profileUrl, $filepath);
+            
+            $relativePath = 'uploads/qrcodes/' . $filename;
+            $this->db->update('profiles', ['qr_code_path' => $relativePath], 'user_id = ?', [$userId]);
+            
+            return url($relativePath);
+        }
+        
+        return url($currentPath);
+    }
+}
