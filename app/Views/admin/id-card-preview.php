@@ -435,21 +435,28 @@ if (!function_exists('url')) {
                                         <td class="details-label">Staff ID:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['staff_number'] ?? 'N/A') ?></td>
                                     </tr>
-                                    <?php if (!empty($profile['unit']) && empty($profile['faculty']) && empty($profile['department'])): ?>
-                                    <!-- Show Unit only if no faculty/department -->
+                                    <?php 
+                                    // Determine what to show: Unit OR Faculty/Department
+                                    $hasUnit = !empty($profile['unit']) && trim($profile['unit']) !== '';
+                                    $hasFaculty = !empty($profile['faculty']) && trim($profile['faculty']) !== '';
+                                    $hasDepartment = !empty($profile['department']) && trim($profile['department']) !== '';
+                                    
+                                    // Show Unit if it exists and no faculty/department
+                                    if ($hasUnit && !$hasFaculty && !$hasDepartment): 
+                                    ?>
                                     <tr>
                                         <td class="details-label">Unit:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['unit']) ?></td>
                                     </tr>
                                     <?php else: ?>
-                                    <!-- Show Faculty/Department if they exist -->
-                                    <?php if (!empty($profile['faculty'])): ?>
+                                    <!-- Show Faculty/Department only if they exist -->
+                                    <?php if ($hasFaculty): ?>
                                     <tr>
                                         <td class="details-label">Faculty:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['faculty']) ?></td>
                                     </tr>
                                     <?php endif; ?>
-                                    <?php if (!empty($profile['department'])): ?>
+                                    <?php if ($hasDepartment): ?>
                                     <tr>
                                         <td class="details-label">Dept:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['department']) ?></td>
