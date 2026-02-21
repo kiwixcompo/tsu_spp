@@ -82,6 +82,13 @@ class IDCardController extends Controller
              $profile['qr_code_url'] = $qrCodeUrl;
         }
 
+        // Mark ID card as generated
+        $this->db->update('profiles', [
+            'id_card_generated' => 1,
+            'id_card_generated_at' => date('Y-m-d H:i:s'),
+            'id_card_generated_by' => $_SESSION['user_id'] ?? null
+        ], 'user_id = ?', [$userId]);
+
         // Return profile data for ID card generation
         $this->json([
             'success' => true,
@@ -122,8 +129,15 @@ class IDCardController extends Controller
         // Ensure QR code exists and is valid
         $qrCodeUrl = $this->ensureQRCodeExists($userId, $profile['profile_slug'], $profile['qr_code_path']);
 
+        // Mark ID card as generated when preview is accessed
+        $this->db->update('profiles', [
+            'id_card_generated' => 1,
+            'id_card_generated_at' => date('Y-m-d H:i:s'),
+            'id_card_generated_by' => $_SESSION['user_id'] ?? null
+        ], 'user_id = ?', [$userId]);
+
         // Decode HTML entities for proper display on ID card
-        $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'designation', 'staff_number', 'email', 'blood_group'];
+        $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'unit', 'designation', 'staff_number', 'email', 'blood_group'];
         foreach ($textFields as $field) {
             if (isset($profile[$field])) {
                 $profile[$field] = html_entity_decode($profile[$field], ENT_QUOTES | ENT_HTML5, 'UTF-8');

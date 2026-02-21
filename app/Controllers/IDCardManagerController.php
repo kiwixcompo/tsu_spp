@@ -42,11 +42,11 @@ class IDCardManagerController extends Controller
         $department = $_GET['department'] ?? '';
         $staffType = $_GET['staff_type'] ?? '';
         
-        // Build query
+        // Build query - exclude profiles with ID cards already generated
         $query = "SELECT p.*, u.email, u.account_status 
                   FROM profiles p 
                   INNER JOIN users u ON p.user_id = u.id 
-                  WHERE 1=1";
+                  WHERE (p.id_card_generated IS NULL OR p.id_card_generated = 0)";
         
         $params = [];
         
@@ -190,38 +190,47 @@ class IDCardManagerController extends Controller
         
         try {
             // Total profiles
-            $stmt = $this->db->query("SELECT COUNT(*) FROM profiles");
-            $stats['total_profiles'] = $stmt->fetchColumn();
+            $result = $this->db->fetch("SELECT COUNT(*) as count FROM profiles");
+            $stats['total_profiles'] = $result['count'];
+            
+            // Pending ID cards (not yet generated)
+            $result = $this->db->fetch("SELECT COUNT(*) as count FROM profiles WHERE (id_card_generated IS NULL OR id_card_generated = 0)");
+            $stats['pending_id_cards'] = $result['count'];
+            
+            // Generated ID cards
+            $result = $this->db->fetch("SELECT COUNT(*) as count FROM profiles WHERE id_card_generated = 1");
+            $stats['generated_id_cards'] = $result['count'];
         } catch (\Exception $e) {
             $stats['total_profiles'] = 0;
+            $stats['pending_id_cards'] = 0;
+            $stats['generated_id_cards'] = 0;
         }
         
         try {
             // Check if id_card_print_logs table exists
-            $tableExists = $this->db->query("SHOW TABLES LIKE 'id_card_print_logs'")->fetch();
+            $tableExists = $this->db->fetch("SHOW TABLES LIKE 'id_card_print_logs'");
             
             if ($tableExists) {
                 // Total prints today
-                $stmt = $this->db->query("SELECT COUNT(*) FROM id_card_print_logs WHERE DATE(created_at) = CURDATE()");
-                $stats['prints_today'] = $stmt->fetchColumn();
+                $result = $this->db->fetch("SELECT COUNT(*) as count FROM id_card_print_logs WHERE DATE(created_at) = CURDATE()");
+                $stats['prints_today'] = $result['count'];
                 
                 // Total prints this month
-                $stmt = $this->db->query("SELECT COUNT(*) FROM id_card_print_logs WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())");
-                $stats['prints_this_month'] = $stmt->fetchColumn();
+                $result = $this->db->fetch("SELECT COUNT(*) as count FROM id_card_print_logs WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())");
+                $stats['prints_this_month'] = $result['count'];
                 
                 // Total prints all time
-                $stmt = $this->db->query("SELECT COUNT(*) FROM id_card_print_logs");
-                $stats['total_prints'] = $stmt->fetchColumn();
+                $result = $this->db->fetch("SELECT COUNT(*) as count FROM id_card_print_logs");
+                $stats['total_prints'] = $result['count'];
                 
                 // Recent activity (last 7 days)
-                $stmt = $this->db->query("
+                $stats['activity_chart'] = $this->db->fetchAll("
                     SELECT DATE(created_at) as date, COUNT(*) as count 
                     FROM id_card_print_logs 
                     WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                     GROUP BY DATE(created_at)
                     ORDER BY date ASC
                 ");
-                $stats['activity_chart'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             } else {
                 $stats['prints_today'] = 0;
                 $stats['prints_this_month'] = 0;
@@ -237,8 +246,7 @@ class IDCardManagerController extends Controller
         
         try {
             // Profiles by staff type
-            $stmt = $this->db->query("SELECT staff_type, COUNT(*) as count FROM profiles WHERE staff_type IS NOT NULL GROUP BY staff_type");
-            $stats['by_staff_type'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $stats['by_staff_type'] = $this->db->fetchAll("SELECT staff_type, COUNT(*) as count FROM profiles WHERE staff_type IS NOT NULL GROUP BY staff_type");
         } catch (\Exception $e) {
             $stats['by_staff_type'] = [];
         }
@@ -275,26 +283,12 @@ class IDCardManagerController extends Controller
     private function getPendingProfiles($limit = 20)
     {
         try {
-            // Check if table exists
-            $tableExists = $this->db->query("SHOW TABLES LIKE 'id_card_print_logs'")->fetch();
-            
-            if (!$tableExists) {
-                // If table doesn't exist, just return recent profiles
-                return $this->db->fetchAll("
-                    SELECT p.*, u.email
-                    FROM profiles p
-                    INNER JOIN users u ON p.user_id = u.id
-                    ORDER BY p.created_at DESC
-                    LIMIT ?
-                ", [$limit]);
-            }
-            
+            // Return profiles where ID card has not been generated
             return $this->db->fetchAll("
                 SELECT p.*, u.email
                 FROM profiles p
                 INNER JOIN users u ON p.user_id = u.id
-                LEFT JOIN id_card_print_logs l ON p.id = l.profile_id
-                WHERE l.id IS NULL
+                WHERE (p.id_card_generated IS NULL OR p.id_card_generated = 0)
                 ORDER BY p.created_at DESC
                 LIMIT ?
             ", [$limit]);

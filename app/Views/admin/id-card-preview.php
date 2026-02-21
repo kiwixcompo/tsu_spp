@@ -448,6 +448,9 @@ if (!function_exists('url')) {
                                         <td class="details-label">Unit:</td>
                                         <td class="details-value"><?= htmlspecialchars($profile['unit']) ?></td>
                                     </tr>
+                                    <!-- Add spacing rows to fill the space -->
+                                    <tr style="height: 10px;"><td colspan="2"></td></tr>
+                                    <tr style="height: 10px;"><td colspan="2"></td></tr>
                                     <?php else: ?>
                                     <!-- Show Faculty/Department only if they exist -->
                                     <?php if ($hasFaculty): ?>
