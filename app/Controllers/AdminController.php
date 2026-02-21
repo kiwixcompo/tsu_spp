@@ -319,7 +319,7 @@ class AdminController extends Controller
         try {
             return $this->db->fetchAll("
                 SELECT u.id, u.email, u.account_status, u.email_verified, u.created_at, u.last_login, u.role,
-                       p.first_name, p.last_name, p.faculty, p.department, p.designation, p.staff_number, p.profile_slug
+                       p.first_name, p.last_name, p.faculty, p.department, p.unit, p.designation, p.staff_number, p.profile_slug
                 FROM users u
                 LEFT JOIN profiles p ON u.id = p.user_id
                 ORDER BY u.created_at DESC

@@ -94,7 +94,7 @@ if (!function_exists('url')) {
                                             <th>Name</th>
                                             <th>Staff ID</th>
                                             <th>Email</th>
-                                            <th>Faculty</th>
+                                            <th>Faculty/Unit</th>
                                             <th>Status</th>
                                             <th>Actions</th>
                                         </tr>
@@ -113,7 +113,17 @@ if (!function_exists('url')) {
                                                     <td><?= htmlspecialchars(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?></td>
                                                     <td class="fw-bold text-primary"><?= htmlspecialchars($user['staff_number'] ?? '-') ?></td>
                                                     <td><?= htmlspecialchars($user['email']) ?></td>
-                                                    <td><?= htmlspecialchars($user['faculty'] ?? '-') ?></td>
+                                                    <td>
+                                                        <?php 
+                                                        if (!empty($user['unit'])) {
+                                                            echo '<span class="badge bg-info">' . htmlspecialchars($user['unit']) . '</span>';
+                                                        } elseif (!empty($user['faculty'])) {
+                                                            echo htmlspecialchars($user['faculty']);
+                                                        } else {
+                                                            echo '-';
+                                                        }
+                                                        ?>
+                                                    </td>
                                                     <td><span class="badge bg-<?= $user['account_status'] === 'active' ? 'success' : ($user['account_status'] === 'pending' ? 'warning' : 'danger') ?>"><?= ucfirst($user['account_status']) ?></span></td>
                                                     <td>
                                                         <div class="btn-group btn-group-sm">
