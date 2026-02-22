@@ -509,32 +509,33 @@ class IDCardManagerController extends Controller
     }
 
     /**
-     * Ensure QR code exists (copied from IDCardController)
+     * Ensure QR code exists
      */
     private function ensureQRCodeExists($userId, $slug, $currentPath)
     {
         require_once __DIR__ . '/../Helpers/QRCodeHelper.php';
         
-        $qrHelper = new \App\Helpers\QRCodeHelper();
-        $profileUrl = url("directory/profile/{$slug}");
-        
-        $uploadsDir = __DIR__ . '/../../public/uploads/qrcodes';
-        if (!is_dir($uploadsDir)) {
-            mkdir($uploadsDir, 0755, true);
+        // Check if QR code already exists and is valid
+        if (!empty($currentPath)) {
+            $fullPath = __DIR__ . '/../../public/' . ltrim($currentPath, '/');
+            if (file_exists($fullPath) && filesize($fullPath) > 0) {
+                return url($currentPath);
+            }
         }
         
-        $filename = "qr_user_{$userId}.png";
-        $filepath = $uploadsDir . '/' . $filename;
+        // Generate new QR code
+        $filename = \App\Helpers\QRCodeHelper::generateProfileQRCode($userId, $slug);
         
-        if (!file_exists($filepath) || empty($currentPath)) {
-            $qrHelper->generateQRCode($profileUrl, $filepath);
-            
-            $relativePath = 'uploads/qrcodes/' . $filename;
+        if ($filename) {
+            // Update database with new QR code path
+            $relativePath = 'storage/qrcodes/' . $filename;
             $this->db->update('profiles', ['qr_code_path' => $relativePath], 'user_id = ?', [$userId]);
             
-            return url($relativePath);
+            // Return URL through serving route
+            return url('qrcode/' . $filename);
         }
         
-        return url($currentPath);
+        // Return empty if generation failed
+        return '';
     }
 }
