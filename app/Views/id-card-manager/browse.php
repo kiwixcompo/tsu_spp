@@ -153,10 +153,10 @@ if (!function_exists('escape_html')) {
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="<?= url('admin/id-card-generator?user_id=' . $profile['user_id']) ?>" class="btn btn-sm btn-primary" target="_blank">
+                                        <a href="<?= url('id-card-manager/preview/' . $profile['user_id']) ?>" class="btn btn-sm btn-primary" title="Preview & Print ID Card">
                                             <i class="fas fa-print"></i>
                                         </a>
-                                        <a href="<?= url('directory/profile/' . $profile['profile_slug']) ?>" class="btn btn-sm btn-info" target="_blank">
+                                        <a href="<?= url('directory/profile/' . $profile['profile_slug']) ?>" class="btn btn-sm btn-info" target="_blank" title="View Profile">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     </td>

@@ -134,6 +134,7 @@ $router->get('/health', 'UtilityController@healthCheck');
 $router->get('/id-card-manager/dashboard', 'IDCardManagerController@dashboard', ['Auth', 'IDCardManager']);
 $router->get('/id-card-manager/browse', 'IDCardManagerController@browse', ['Auth', 'IDCardManager']);
 $router->get('/id-card-manager/preview/{id}', 'IDCardManagerController@preview', ['Auth', 'IDCardManager']);
+$router->get('/id-card-manager/bulk-preview', 'IDCardManagerController@bulkPreview', ['Auth', 'IDCardManager']);
 $router->get('/id-card-manager/print-history', 'IDCardManagerController@printHistory', ['Auth', 'IDCardManager']);
 $router->post('/id-card-manager/bulk-print', 'IDCardManagerController@bulkPrint', ['Auth', 'IDCardManager']);
 $router->post('/id-card-manager/print-single', 'IDCardManagerController@printSingle', ['Auth', 'IDCardManager']);

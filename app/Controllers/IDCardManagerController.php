@@ -137,19 +137,16 @@ class IDCardManagerController extends Controller
             }
             
             // Check max bulk print limit
-            $maxBulk = $this->getSetting('max_bulk_print_count', 50);
+            $maxBulk = 50; // Default max
             if (count($profileIds) > $maxBulk) {
                 $_SESSION['error'] = "Maximum {$maxBulk} cards can be printed at once";
                 $this->redirect('id-card-manager/browse');
                 return;
             }
             
-            // Log bulk print
-            $this->logBulkPrint($profileIds);
-            
-            // Redirect to ID card controller for actual printing
+            // Store selected IDs in session and redirect to bulk preview
             $_SESSION['bulk_print_ids'] = $profileIds;
-            $this->redirect('admin/id-card-generator?bulk=1');
+            $this->redirect('id-card-manager/bulk-preview');
             return;
         }
         
@@ -392,6 +389,64 @@ class IDCardManagerController extends Controller
         $this->view('admin/id-card-preview', [
             'profile' => $profile,
             'qr_code_url' => $qrCodeUrl,
+        ]);
+    }
+
+    /**
+     * Bulk preview ID cards
+     */
+    public function bulkPreview(): void
+    {
+        $this->requireAuth();
+
+        if (!isset($_SESSION['bulk_print_ids']) || empty($_SESSION['bulk_print_ids'])) {
+            $_SESSION['error'] = 'No profiles selected for bulk print';
+            $this->redirect('id-card-manager/browse');
+            return;
+        }
+
+        $userIds = $_SESSION['bulk_print_ids'];
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+
+        // Get profiles
+        $profiles = $this->db->fetchAll("
+            SELECT u.id, u.email, 
+                   p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
+                   p.designation, p.faculty, p.department, p.unit, p.staff_type, p.profile_photo, 
+                   p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
+            FROM users u
+            INNER JOIN profiles p ON u.id = p.user_id
+            WHERE u.id IN ($placeholders)
+        ", $userIds);
+
+        if (empty($profiles)) {
+            $_SESSION['error'] = 'No profiles found';
+            $this->redirect('id-card-manager/browse');
+            return;
+        }
+
+        // Ensure QR codes exist and mark as generated
+        foreach ($profiles as &$profile) {
+            $profile['qr_code_url'] = $this->ensureQRCodeExists($profile['id'], $profile['profile_slug'], $profile['qr_code_path']);
+            
+            // Mark as generated
+            $this->db->update('profiles', [
+                'id_card_generated' => 1,
+                'id_card_generated_at' => date('Y-m-d H:i:s'),
+                'id_card_generated_by' => $_SESSION['user_id'] ?? null
+            ], 'user_id = ?', [$profile['id']]);
+
+            // Decode HTML entities
+            $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'unit', 'designation', 'staff_number', 'email', 'blood_group'];
+            foreach ($textFields as $field) {
+                if (isset($profile[$field])) {
+                    $profile[$field] = html_entity_decode($profile[$field], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                }
+            }
+        }
+
+        $this->view('id-card-manager/bulk-preview', [
+            'profiles' => $profiles,
         ]);
     }
 
