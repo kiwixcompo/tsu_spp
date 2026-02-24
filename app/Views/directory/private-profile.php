@@ -142,7 +142,12 @@ if (!function_exists('escape_html')) {
         
         <div class="message">
             <i class="fas fa-info-circle" style="color: #667eea; margin-right: 8px;"></i>
-            This staff member is a verified employee of Taraba State University but has chosen to keep their profile private.
+            This is a verified staff member of Taraba State University who has chosen to set their profile to private. 
+            <?php if (isset($_GET['qr']) || isset($_GET['scan'])): ?>
+                <br><br>
+                <i class="fas fa-qrcode" style="color: #667eea; margin-right: 8px;"></i>
+                You've accessed this profile via QR code scan. While the full profile details are private, you can confirm this person's employment status with TSU.
+            <?php endif; ?>
         </div>
         
         <?php

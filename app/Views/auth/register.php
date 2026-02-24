@@ -377,7 +377,7 @@ SecurityHelper::setSecurityHeaders();
                                            name="terms" 
                                            required>
                                     <label class="form-check-label" for="terms">
-                                        I agree to the <a href="#" target="_blank">Terms and Conditions</a> and <a href="#" target="_blank">Privacy Policy</a>
+                                        I agree to the <a href="<?= url('terms') ?>" target="_blank">Terms and Conditions</a> and <a href="<?= url('privacy-policy') ?>" target="_blank">Privacy Policy</a>
                                     </label>
                                 </div>
                             </div>

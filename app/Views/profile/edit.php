@@ -65,6 +65,7 @@ if (!function_exists('escape_html')) {
                         <a class="nav-link active" href="<?= url('profile/edit') ?>"><i class="fas fa-user-edit me-2"></i>Edit Profile</a>
                         <a class="nav-link" href="<?= url('profile/education') ?>"><i class="fas fa-graduation-cap me-2"></i>Education</a>
                         <a class="nav-link" href="<?= url('profile/experience') ?>"><i class="fas fa-briefcase me-2"></i>Experience</a>
+                        <a class="nav-link" href="<?= url('profile/publications') ?>"><i class="fas fa-book me-2"></i>Publications</a>
                         <a class="nav-link" href="<?= url('profile/skills') ?>"><i class="fas fa-cogs me-2"></i>Skills</a>
                         <a class="nav-link" href="<?= url('settings') ?>"><i class="fas fa-cog me-2"></i>Settings</a>
                         <hr class="text-white-50">

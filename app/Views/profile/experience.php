@@ -79,6 +79,9 @@ if (!function_exists('safe_output')) {
                         <a class="nav-link active" href="<?= url('profile/experience') ?>">
                             <i class="fas fa-briefcase me-2"></i>Experience
                         </a>
+                        <a class="nav-link" href="<?= url('profile/publications') ?>">
+                            <i class="fas fa-book me-2"></i>Publications
+                        </a>
                         <a class="nav-link" href="<?= url('profile/skills') ?>">
                             <i class="fas fa-cogs me-2"></i>Skills
                         </a>

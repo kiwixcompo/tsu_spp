@@ -29,8 +29,8 @@ class QRCodeHelper
                 require_once __DIR__ . '/UrlHelper.php';
             }
             
-            // Profile URL
-            $profileUrl = url('profile/' . $profileSlug);
+            // Profile URL with QR scan parameter
+            $profileUrl = url('profile/' . $profileSlug . '?qr=1');
             
             // Generate QR code using QRServer API (Reliable alternative to Google)
             $apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=' . urlencode($profileUrl);

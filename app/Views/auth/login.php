@@ -294,5 +294,15 @@ if (!function_exists('url')) {
             }
         }
     </script>
+
+    <!-- Footer -->
+    <footer class="text-center py-3 mt-auto">
+        <div class="container">
+            <p class="text-muted small mb-0">
+                <a href="<?= url('terms') ?>" class="text-decoration-none me-3" target="_blank">Terms & Conditions</a>
+                <a href="<?= url('privacy-policy') ?>" class="text-decoration-none" target="_blank">Privacy Policy</a>
+            </p>
+        </div>
+    </footer>
 </body>
 </html>

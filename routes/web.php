@@ -9,6 +9,10 @@ $router->get('/about', 'HomeController@about');
 $router->get('/search', 'SearchController@index');
 $router->get('/directory', 'DirectoryController@index');
 
+// Legal pages
+$router->get('/terms', 'LegalController@terms');
+$router->get('/privacy-policy', 'LegalController@privacy');
+
 // Authentication routes
 $router->get('/register', 'AuthController@showRegister');
 $router->post('/register', 'AuthController@register');
