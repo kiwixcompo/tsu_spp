@@ -173,6 +173,15 @@ if (!function_exists('escape_html')) {
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Gender *</label>
+                                        <select class="form-select" name="gender" required>
+                                            <option value="">Select Gender</option>
+                                            <?php foreach (['Male', 'Female', 'Other', 'Prefer not to say'] as $g): ?>
+                                                <option value="<?= $g ?>" <?= ($profile['gender'] ?? '') === $g ? 'selected' : '' ?>><?= $g ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div class="row">

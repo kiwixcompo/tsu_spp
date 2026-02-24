@@ -359,7 +359,19 @@ if (!function_exists('safe_output')) {
                             <?php endif; ?>
                             <?php if (!empty($profile['cv_file'])): ?>
                                 <div class="mt-3">
-                                    <a href="<?= url('uploads/' . $profile['cv_file']) ?>" 
+                                    <?php
+                                    // Handle CV file path - ensure it's properly formatted
+                                    $cvPath = $profile['cv_file'];
+                                    // Remove any leading slashes
+                                    $cvPath = ltrim($cvPath, '/');
+                                    // If path doesn't start with 'uploads/', add it
+                                    if (strpos($cvPath, 'uploads/') !== 0) {
+                                        $cvPath = 'uploads/' . $cvPath;
+                                    }
+                                    // Generate full URL
+                                    $cvUrl = asset($cvPath);
+                                    ?>
+                                    <a href="<?= $cvUrl ?>" 
                                        target="_blank" class="btn btn-outline-primary btn-sm">
                                         <i class="fas fa-download me-2"></i>Download CV
                                     </a>

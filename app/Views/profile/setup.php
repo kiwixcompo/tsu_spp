@@ -137,9 +137,22 @@ if (!function_exists('url')) {
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">
+                                    <label for="gender" class="form-label">Gender *</label>
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        <option value="">Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                        <option value="Prefer not to say">Prefer not to say</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
                                     <label for="office_location" class="form-label">Office Location</label>
                                     <input type="text" class="form-control" id="office_location" name="office_location">
                                 </div>
+                            </div>
+
+                            <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="office_phone" class="form-label">Office Phone</label>
                                     <input type="tel" class="form-control" id="office_phone" name="office_phone">

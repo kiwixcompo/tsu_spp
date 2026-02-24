@@ -145,3 +145,8 @@ $router->post('/id-card-manager/settings', 'IDCardManagerController@settings', [
 // Admin can also access ID card generator
 $router->get('/admin/id-card-generator', 'IDCardController@generator', ['Auth', 'Admin']);
 $router->get('/admin/id-card-preview', 'IDCardController@preview', ['Auth', 'Admin']);
+
+// Nominal Role routes (for nominal_role and admin)
+$router->get('/nominal-role/dashboard', 'NominalRoleController@dashboard', ['Auth', 'NominalRole']);
+$router->get('/nominal-role/staff-list', 'NominalRoleController@filterStaff', ['Auth', 'NominalRole']);
+$router->get('/nominal-role/export', 'NominalRoleController@exportStaff', ['Auth', 'NominalRole']);

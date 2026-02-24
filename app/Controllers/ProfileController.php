@@ -132,6 +132,7 @@ class ProfileController extends Controller
             'staff_prefix' => 'required',
             'staff_number' => 'required',
             'blood_group' => 'required',
+            'gender' => 'required',
         ]);
 
         if (!empty($errors)) {
@@ -212,6 +213,7 @@ class ProfileController extends Controller
                 'first_name' => $firstName,
                 'middle_name' => $this->sanitizeInput($this->input('middle_name')),
                 'last_name' => $lastName,
+                'gender' => $this->sanitizeInput($this->input('gender')),
                 'faculty' => $registrationData['faculty'] ?? '',
                 'department' => $registrationData['department'] ?? '',
                 'unit' => $registrationData['unit'] ?? null,
@@ -463,6 +465,7 @@ class ProfileController extends Controller
                 'first_name' => $this->sanitizeInput($this->input('first_name')),
                 'middle_name' => $this->sanitizeInput($this->input('middle_name')),
                 'last_name' => $this->sanitizeInput($this->input('last_name')),
+                'gender' => $this->sanitizeInput($this->input('gender')),
                 'staff_number' => $fullStaffNumber,
                 'staff_type' => $staffType,
                 'title' => $this->sanitizeInput($this->input('title')),
