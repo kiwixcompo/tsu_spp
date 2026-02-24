@@ -150,7 +150,9 @@ if (!function_exists('escape_html')) {
         $backUrl = url('directory');
         if (isset($_SESSION['user'])) {
             $userRole = $_SESSION['user']['role'] ?? 'user';
-            if ($userRole === 'id_card_manager') {
+            if ($userRole === 'nominal_role') {
+                $backUrl = url('nominal-role/dashboard');
+            } elseif ($userRole === 'id_card_manager') {
                 $backUrl = url('id-card-manager/dashboard');
             } elseif ($userRole === 'admin') {
                 $backUrl = url('admin/dashboard');

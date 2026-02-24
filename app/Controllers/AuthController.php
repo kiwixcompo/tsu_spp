@@ -394,6 +394,8 @@ class AuthController extends Controller
                 $redirectUrl = 'admin/dashboard';
             } elseif ($user['role'] === 'id_card_manager') {
                 $redirectUrl = 'id-card-manager/dashboard';
+            } elseif ($user['role'] === 'nominal_role') {
+                $redirectUrl = 'nominal-role/dashboard';
             }
 
             $this->json([

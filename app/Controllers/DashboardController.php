@@ -36,6 +36,12 @@ class DashboardController extends Controller
         // Get role from user object (in case session wasn't set)
         $role = $user['role'] ?? $_SESSION['role'] ?? 'user';
         
+        // Redirect Nominal Role to their dedicated dashboard
+        if ($role === 'nominal_role') {
+            $this->redirect('nominal-role/dashboard');
+            return;
+        }
+        
         // Redirect ID Card Manager to their dedicated dashboard
         if ($role === 'id_card_manager') {
             $this->redirect('id-card-manager/dashboard');
