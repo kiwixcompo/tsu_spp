@@ -79,10 +79,50 @@ if (!function_exists('url')) {
                             </div>
                             
                             <div class="row g-2">
-                                <div class="col-md-4"><input type="text" id="userSearch" class="form-control" placeholder="Search by Name, Staff ID, or Email..."></div>
+                                <div class="col-md-6">
+                                    <input type="text" id="userSearch" class="form-control" placeholder="Search by Name, Staff ID, or Email..." onkeyup="filterUsers()">
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <span class="text-muted">Showing <span id="visibleCount"><?= count($users ?? []) ?></span> of <?= $total_users ?? 0 ?> users</span>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Top Pagination -->
+                    <?php if (($total_pages ?? 1) > 1): ?>
+                    <nav aria-label="Page navigation" class="mb-3">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item <?= ($current_page ?? 1) <= 1 ? 'disabled' : '' ?>">
+                                <a class="page-link" href="?page=<?= ($current_page ?? 1) - 1 ?>">Previous</a>
+                            </li>
+                            
+                            <?php
+                            $start = max(1, ($current_page ?? 1) - 2);
+                            $end = min(($total_pages ?? 1), ($current_page ?? 1) + 2);
+                            
+                            if ($start > 1): ?>
+                                <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
+                                <?php if ($start > 2): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
+                            <?php endif;
+                            
+                            for ($i = $start; $i <= $end; $i++): ?>
+                                <li class="page-item <?= $i === ($current_page ?? 1) ? 'active' : '' ?>">
+                                    <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                                </li>
+                            <?php endfor;
+                            
+                            if ($end < ($total_pages ?? 1)): ?>
+                                <?php if ($end < ($total_pages ?? 1) - 1): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
+                                <li class="page-item"><a class="page-link" href="?page=<?= $total_pages ?>"><?= $total_pages ?></a></li>
+                            <?php endif; ?>
+                            
+                            <li class="page-item <?= ($current_page ?? 1) >= ($total_pages ?? 1) ? 'disabled' : '' ?>">
+                                <a class="page-link" href="?page=<?= ($current_page ?? 1) + 1 ?>">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <?php endif; ?>
 
                     <div class="card">
                         <div class="card-body p-0">
@@ -140,6 +180,41 @@ if (!function_exists('url')) {
                             </div>
                         </div>
                     </div>
+
+                    <!-- Bottom Pagination -->
+                    <?php if (($total_pages ?? 1) > 1): ?>
+                    <nav aria-label="Page navigation" class="mt-3">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item <?= ($current_page ?? 1) <= 1 ? 'disabled' : '' ?>">
+                                <a class="page-link" href="?page=<?= ($current_page ?? 1) - 1 ?>">Previous</a>
+                            </li>
+                            
+                            <?php
+                            $start = max(1, ($current_page ?? 1) - 2);
+                            $end = min(($total_pages ?? 1), ($current_page ?? 1) + 2);
+                            
+                            if ($start > 1): ?>
+                                <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
+                                <?php if ($start > 2): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
+                            <?php endif;
+                            
+                            for ($i = $start; $i <= $end; $i++): ?>
+                                <li class="page-item <?= $i === ($current_page ?? 1) ? 'active' : '' ?>">
+                                    <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                                </li>
+                            <?php endfor;
+                            
+                            if ($end < ($total_pages ?? 1)): ?>
+                                <?php if ($end < ($total_pages ?? 1) - 1): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
+                                <li class="page-item"><a class="page-link" href="?page=<?= $total_pages ?>"><?= $total_pages ?></a></li>
+                            <?php endif; ?>
+                            
+                            <li class="page-item <?= ($current_page ?? 1) >= ($total_pages ?? 1) ? 'disabled' : '' ?>">
+                                <a class="page-link" href="?page=<?= ($current_page ?? 1) + 1 ?>">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -177,14 +252,37 @@ if (!function_exists('url')) {
             document.getElementById('mainContent').classList.toggle('expanded');
         }
 
-        // Search Filter
-        document.getElementById('userSearch').addEventListener('keyup', function() {
-            let filter = this.value.toLowerCase();
-            let rows = document.querySelectorAll('.user-row');
+        // Search Filter - Real-time
+        function filterUsers() {
+            const filter = document.getElementById('userSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('.user-row');
+            let visibleCount = 0;
+            
             rows.forEach(row => {
-                let text = row.getAttribute('data-name');
-                row.style.display = text.includes(filter) ? '' : 'none';
+                const text = row.getAttribute('data-name');
+                if (text && text.includes(filter)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
             });
+            
+            // Update visible count
+            document.getElementById('visibleCount').textContent = visibleCount;
+        }
+
+        // Initialize search on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('userSearch');
+            if (searchInput) {
+                // Clear search on page load
+                searchInput.value = '';
+                
+                // Add real-time search listener
+                searchInput.addEventListener('input', filterUsers);
+                searchInput.addEventListener('keyup', filterUsers);
+            }
         });
 
         // Checkbox Logic
