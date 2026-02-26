@@ -434,6 +434,7 @@ SecurityHelper::setSecurityHeaders();
             'GST Unit',
             'Directorate of Research and Development',
             'Directorate of Youth Development',
+            'Directorate of Career Development & Employability Services',
             'SERVICOM',
             'Health Services Department',
             'Directorate of Academic Planning',
