@@ -33,7 +33,7 @@ if (!function_exists('escape_html')) {
             <div class="card-body">
                 <form method="GET" action="<?= url('id-card-manager/browse') ?>" class="row g-3">
                     <div class="col-md-4">
-                        <input type="text" name="search" class="form-control" placeholder="Search by name, staff number, email..." value="<?= htmlspecialchars($search) ?>">
+                        <input type="text" name="search" class="form-control" placeholder="Search by name, staff number, email, faculty, or unit..." value="<?= htmlspecialchars($search) ?>">
                     </div>
                     <div class="col-md-2">
                         <select name="staff_type" class="form-select">

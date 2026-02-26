@@ -51,9 +51,9 @@ class IDCardManagerController extends Controller
         $params = [];
         
         if ($search) {
-            $query .= " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.staff_number LIKE ? OR u.email LIKE ?)";
+            $query .= " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.staff_number LIKE ? OR u.email LIKE ? OR p.faculty LIKE ? OR p.unit LIKE ?)";
             $searchTerm = "%{$search}%";
-            $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
+            $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
         }
         
         if ($faculty) {

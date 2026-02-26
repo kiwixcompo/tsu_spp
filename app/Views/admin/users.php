@@ -80,7 +80,7 @@ if (!function_exists('url')) {
                             
                             <div class="row g-2">
                                 <div class="col-md-6">
-                                    <input type="text" id="userSearch" class="form-control" placeholder="Search by Name, Staff ID, or Email..." onkeyup="filterUsers()">
+                                    <input type="text" id="userSearch" class="form-control" placeholder="Search by Name, Staff ID, Email, Faculty, or Unit..." onkeyup="filterUsers()">
                                 </div>
                                 <div class="col-md-6 text-end">
                                     <span class="text-muted">Showing <span id="visibleCount"><?= count($users ?? []) ?></span> of <?= $total_users ?? 0 ?> users</span>
@@ -144,7 +144,7 @@ if (!function_exists('url')) {
                                             <tr><td colspan="7" class="text-center p-4 text-muted">No users found</td></tr>
                                         <?php else: ?>
                                             <?php foreach ($users as $user): ?>
-                                                <tr class="user-row" data-name="<?= strtolower(($user['first_name']??'').' '.($user['last_name']??'').' '.($user['email']??'').' '.($user['staff_number']??'')) ?>">
+                                                <tr class="user-row" data-name="<?= strtolower(($user['first_name']??'').' '.($user['last_name']??'').' '.($user['email']??'').' '.($user['staff_number']??'').' '.($user['faculty']??'').' '.($user['unit']??'')) ?>">
                                                     <td>
                                                         <?php if (($user['role'] ?? 'user') !== 'admin'): ?>
                                                             <input type="checkbox" class="user-checkbox" value="<?= $user['id'] ?>" onchange="updateBulkButtons()">
