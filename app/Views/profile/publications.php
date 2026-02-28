@@ -145,9 +145,9 @@ if (!function_exists('escape_html')) {
                                                 <span class="badge bg-primary publication-type-badge me-2">
                                                     <?= ucfirst($publication['publication_type']) ?>
                                                 </span>
-                                                <?php if ($publication['year']): ?>
+                                                <?php if (!empty($publication['year']) || !empty($publication['publication_year'])): ?>
                                                 <span class="badge bg-secondary publication-type-badge">
-                                                    <?= $publication['year'] ?>
+                                                    <?= $publication['year'] ?? $publication['publication_year'] ?? '' ?>
                                                 </span>
                                                 <?php endif; ?>
                                             </div>
@@ -181,10 +181,15 @@ if (!function_exists('escape_html')) {
                                         <?php endif; ?>
                                         
                                         <div class="citation-info mb-2">
-                                            <?php if ($publication['journal_conference_name']): ?>
+                                            <?php 
+                                            $journal_conference = $publication['journal_conference_name'] ?? 
+                                                                 $publication['journal_name'] ?? 
+                                                                 $publication['conference_name'] ?? '';
+                                            if (!empty($journal_conference)): 
+                                            ?>
                                             <span class="me-3">
                                                 <i class="fas fa-journal-whills me-1"></i>
-                                                <?= safe_output($publication['journal_conference_name']) ?>
+                                                <?= safe_output($journal_conference) ?>
                                             </span>
                                             <?php endif; ?>
                                             
@@ -228,7 +233,7 @@ if (!function_exists('escape_html')) {
                                                 <?php endif; ?>
                                             </div>
                                             
-                                            <?php if ($publication['citation_count'] > 0): ?>
+                                            <?php if (!empty($publication['citation_count']) && $publication['citation_count'] > 0): ?>
                                             <small class="text-muted">
                                                 <i class="fas fa-quote-right me-1"></i>
                                                 <?= $publication['citation_count'] ?> citations

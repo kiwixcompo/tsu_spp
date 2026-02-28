@@ -163,9 +163,9 @@ if (!function_exists('safe_output')) {
                                             <span class="badge bg-primary publication-type-badge">
                                                 <?= ucfirst($pub['publication_type']) ?>
                                             </span>
-                                            <?php if ($pub['year']): ?>
+                                            <?php if (!empty($pub['year']) || !empty($pub['publication_year'])): ?>
                                                 <span class="badge bg-secondary publication-type-badge">
-                                                    <?= $pub['year'] ?>
+                                                    <?= $pub['year'] ?? $pub['publication_year'] ?? '' ?>
                                                 </span>
                                             <?php endif; ?>
                                         </div>
@@ -226,7 +226,7 @@ if (!function_exists('safe_output')) {
                                                 <?php endif; ?>
                                             </div>
                                             
-                                            <?php if ($pub['citation_count'] > 0): ?>
+                                            <?php if (!empty($pub['citation_count']) && $pub['citation_count'] > 0): ?>
                                                 <small class="text-muted">
                                                     <i class="fas fa-quote-right me-1"></i>
                                                     <?= $pub['citation_count'] ?> citations
