@@ -137,7 +137,7 @@ if (!function_exists('escape_attr')) {
                                         <div class="row align-items-start">
                                             <div class="col">
                                                 <div class="d-flex align-items-center mb-2">
-                                                    <span class="degree-badge me-3"><?= htmlspecialchars($edu['degree_type']) ?></span>
+                                                    <span class="degree-badge me-3"><?= htmlspecialchars($edu['degree_type'] ?? 'Degree') ?></span>
                                                     <h6 class="mb-0"><?= htmlspecialchars($edu['field_of_study']) ?></h6>
                                                 </div>
                                                 <h5 class="mb-2"><?= htmlspecialchars($edu['institution']) ?></h5>

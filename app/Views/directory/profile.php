@@ -276,7 +276,7 @@ if (!function_exists('safe_output')) {
                                 <?php foreach ($education as $edu): ?>
                                     <div class="mb-3 pb-3 <?= $edu !== end($education) ? 'border-bottom' : '' ?>">
                                         <h6 class="fw-bold mb-1">
-                                            <?= htmlspecialchars($edu['degree_type']) ?> in <?= htmlspecialchars($edu['field_of_study']) ?>
+                                            <?= htmlspecialchars($edu['degree_type'] ?? 'Degree') ?> in <?= htmlspecialchars($edu['field_of_study']) ?>
                                         </h6>
                                         <p class="text-primary mb-1"><?= htmlspecialchars($edu['institution']) ?></p>
                                         <?php if (!empty($edu['display_years']) && $edu['display_years'] == 1): ?>

@@ -561,6 +561,8 @@ class ProfileController extends Controller
                 $this->json(['error' => 'Failed to update profile'], 500);
             }
         } catch (\Exception $e) {
+            error_log("Profile update error for user {$user['id']}: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
             $this->json(['error' => 'Profile update failed: ' . $e->getMessage()], 500);
         }
     }
@@ -657,16 +659,18 @@ class ProfileController extends Controller
             $data = [
                 'user_id' => $user['id'],
                 'institution' => $this->sanitizeInput($this->input('institution')),
-                'degree' => $this->sanitizeInput($this->input('degree')),
+                'degree_type' => $this->sanitizeInput($this->input('degree_type')),
                 'field_of_study' => $this->sanitizeInput($this->input('field_of_study')),
                 'start_year' => $this->sanitizeInput($this->input('start_year')),
                 'end_year' => $this->sanitizeInput($this->input('end_year')),
                 'description' => $this->sanitizeInput($this->input('description')),
+                'is_current' => $this->input('is_current') ? 1 : 0,
             ];
             $this->db->insert('education', $data);
             $this->json(['success' => true, 'message' => 'Education added successfully']);
         } catch (\Exception $e) {
-            $this->json(['error' => 'Failed to add education'], 500);
+            error_log("Add education error: " . $e->getMessage());
+            $this->json(['error' => 'Failed to add education: ' . $e->getMessage()], 500);
         }
     }
 
@@ -682,16 +686,18 @@ class ProfileController extends Controller
         try {
             $data = [
                 'institution' => $this->sanitizeInput($this->input('institution')),
-                'degree' => $this->sanitizeInput($this->input('degree')),
+                'degree_type' => $this->sanitizeInput($this->input('degree_type')),
                 'field_of_study' => $this->sanitizeInput($this->input('field_of_study')),
                 'start_year' => $this->sanitizeInput($this->input('start_year')),
                 'end_year' => $this->sanitizeInput($this->input('end_year')),
                 'description' => $this->sanitizeInput($this->input('description')),
+                'is_current' => $this->input('is_current') ? 1 : 0,
             ];
             $this->db->update('education', $data, 'id = ? AND user_id = ?', [$id, $user['id']]);
             $this->json(['success' => true, 'message' => 'Education updated successfully']);
         } catch (\Exception $e) {
-            $this->json(['error' => 'Failed to update education'], 500);
+            error_log("Update education error: " . $e->getMessage());
+            $this->json(['error' => 'Failed to update education: ' . $e->getMessage()], 500);
         }
     }
 
