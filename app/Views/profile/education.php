@@ -137,7 +137,7 @@ if (!function_exists('escape_attr')) {
                                         <div class="row align-items-start">
                                             <div class="col">
                                                 <div class="d-flex align-items-center mb-2">
-                                                    <span class="degree-badge me-3"><?= htmlspecialchars($edu['degree_type'] ?? 'Degree') ?></span>
+                                                    <span class="degree-badge me-3"><?= htmlspecialchars($edu['degree'] ?? $edu['degree_type'] ?? 'Degree') ?></span>
                                                     <h6 class="mb-0"><?= htmlspecialchars($edu['field_of_study']) ?></h6>
                                                 </div>
                                                 <h5 class="mb-2"><?= htmlspecialchars($edu['institution']) ?></h5>
@@ -449,7 +449,8 @@ if (!function_exists('escape_attr')) {
             const educationData = JSON.parse(dropdownItem.getAttribute('data-education'));
             
             // Populate form with existing data
-            document.getElementById('degree_type').value = educationData.degree_type || '';
+            // Handle both 'degree' (current DB) and 'degree_type' (future DB) for compatibility
+            document.getElementById('degree_type').value = educationData.degree_type || educationData.degree || '';
             document.getElementById('field_of_study').value = educationData.field_of_study || '';
             document.getElementById('institution').value = educationData.institution || '';
             document.getElementById('start_year').value = educationData.start_year || '';

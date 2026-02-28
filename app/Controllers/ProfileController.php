@@ -659,7 +659,7 @@ class ProfileController extends Controller
             $data = [
                 'user_id' => $user['id'],
                 'institution' => $this->sanitizeInput($this->input('institution')),
-                'degree_type' => $this->sanitizeInput($this->input('degree_type')),
+                'degree' => $this->sanitizeInput($this->input('degree_type')), // Form sends degree_type, DB has degree
                 'field_of_study' => $this->sanitizeInput($this->input('field_of_study')),
                 'start_year' => $this->sanitizeInput($this->input('start_year')),
                 'end_year' => $this->sanitizeInput($this->input('end_year')),
@@ -686,7 +686,7 @@ class ProfileController extends Controller
         try {
             $data = [
                 'institution' => $this->sanitizeInput($this->input('institution')),
-                'degree_type' => $this->sanitizeInput($this->input('degree_type')),
+                'degree' => $this->sanitizeInput($this->input('degree_type')), // Form sends degree_type, DB has degree
                 'field_of_study' => $this->sanitizeInput($this->input('field_of_study')),
                 'start_year' => $this->sanitizeInput($this->input('start_year')),
                 'end_year' => $this->sanitizeInput($this->input('end_year')),
