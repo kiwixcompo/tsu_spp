@@ -290,11 +290,27 @@ class IDCardController extends Controller
             $qrCodeUrl = $this->ensureQRCodeExists($userId, $profile['profile_slug'], $profile['qr_code_path']);
 
             // Decode HTML entities for safe display
-            $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'designation', 'staff_number', 'email', 'blood_group'];
+            $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'unit', 'designation', 'staff_number', 'email', 'blood_group'];
             foreach ($textFields as $field) {
                 if (isset($profile[$field])) {
                     $profile[$field] = html_entity_decode($profile[$field], ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 }
+            }
+
+            // Fix profile photo URL
+            if (!empty($profile['profile_photo'])) {
+                if (filter_var($profile['profile_photo'], FILTER_VALIDATE_URL)) {
+                    // Already a full URL
+                    $profile['profile_photo_url'] = $profile['profile_photo'];
+                } elseif (strpos($profile['profile_photo'], 'uploads/') === 0 || strpos($profile['profile_photo'], '/uploads/') === 0) {
+                    // Relative path starting with uploads/
+                    $profile['profile_photo_url'] = url(ltrim($profile['profile_photo'], '/'));
+                } else {
+                    // Just filename
+                    $profile['profile_photo_url'] = url('uploads/profiles/' . basename($profile['profile_photo']));
+                }
+            } else {
+                $profile['profile_photo_url'] = null;
             }
 
             $profile['qr_code_url'] = $qrCodeUrl;

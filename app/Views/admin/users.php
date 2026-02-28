@@ -409,17 +409,13 @@ if (!function_exists('url')) {
 
         function buildCardHtml(profile) {
             const staffId = profile.staff_number || ('TSU-' + String(profile.id).padStart(5, '0'));
-            const fullName = [profile.title, profile.first_name, profile.last_name].join(' ');
+            const fullName = [profile.title, profile.first_name, profile.last_name].filter(Boolean).join(' ');
             const bloodGroup = profile.blood_group || '';
             const logoUrl = '<?= asset('assets/images/tsu-logo.png') ?>';
             const bgUrl = '<?= asset('assets/images/tsu-building.jpg') ?>';
             
-            let photoUrl = '';
-            if (profile.profile_photo) {
-                photoUrl = (profile.profile_photo.startsWith('http')) 
-                    ? profile.profile_photo 
-                    : '<?= url('uploads/profiles/') ?>' + profile.profile_photo;
-            }
+            // Use the profile_photo_url that was constructed server-side
+            const photoUrl = profile.profile_photo_url || '';
 
             const qrUrl = profile.qr_code_url || '';
 
@@ -443,7 +439,7 @@ if (!function_exists('url')) {
                             ${photoUrl ? 
                                 `<img src="${photoUrl}" style="width: 140px; height: 165px; object-fit: cover; border-radius: 8px; border: 3px solid #1e40af; box-shadow: 0 3px 6px rgba(0,0,0,0.15);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : ''
                             }
-                            <div style="width: 140px; height: 165px; background: #e2e8f0; color: #64748b; display: ${photoUrl ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 50px; border-radius: 8px; border: 3px solid #1e40af;">${profile.first_name.charAt(0)}</div>
+                            <div style="width: 140px; height: 165px; background: #e2e8f0; color: #64748b; display: ${photoUrl ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 50px; border-radius: 8px; border: 3px solid #1e40af;">${(profile.first_name || 'U').charAt(0).toUpperCase()}</div>
                         </div>
 
                         <div style="text-align: center; margin-top: 10px; position: relative; z-index: 2; padding: 0 10px;">
@@ -454,8 +450,11 @@ if (!function_exists('url')) {
                         <div style="margin-top: 15px; margin-left: 70px; margin-right: 15px; position: relative; z-index: 2; font-size: 12px;">
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Staff ID:</td><td style="color: #111; font-weight: 600; vertical-align: top;">${staffId}</td></tr>
-                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Faculty:</td><td style="color: #111; font-weight: 600; vertical-align: top;">${profile.faculty || ''}</td></tr>
-                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Dept:</td><td style="color: #111; font-weight: 600; vertical-align: top;">${profile.department || ''}</td></tr>
+                                ${profile.unit && !profile.faculty ? 
+                                    `<tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Unit:</td><td style="color: #111; font-weight: 600; vertical-align: top;">${profile.unit}</td></tr>` :
+                                    `<tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Faculty:</td><td style="color: #111; font-weight: 600; vertical-align: top;">${profile.faculty || ''}</td></tr>
+                                     <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Dept:</td><td style="color: #111; font-weight: 600; vertical-align: top;">${profile.department || ''}</td></tr>`
+                                }
                             </table>
                         </div>
 
