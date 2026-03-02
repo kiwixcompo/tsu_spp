@@ -46,6 +46,24 @@ if (file_exists(__DIR__ . '/.env')) {
         <div class="test-card">
             <h1 class="mb-4"><i class="fas fa-key me-2"></i>Forgot Password Functionality Test</h1>
             <p class="lead">This page tests the forgot password feature and shows configuration status.</p>
+            
+            <?php
+            // Debug: Show if .env was loaded
+            $envFile = __DIR__ . '/.env';
+            if (file_exists($envFile)) {
+                echo '<div class="alert alert-info">';
+                echo '<i class="fas fa-info-circle me-2"></i>';
+                echo '<strong>.env file found:</strong> ' . $envFile . '<br>';
+                echo '<strong>File size:</strong> ' . filesize($envFile) . ' bytes<br>';
+                echo '<strong>Readable:</strong> ' . (is_readable($envFile) ? 'Yes' : 'No');
+                echo '</div>';
+            } else {
+                echo '<div class="alert alert-warning">';
+                echo '<i class="fas fa-exclamation-triangle me-2"></i>';
+                echo '<strong>.env file NOT found at:</strong> ' . $envFile;
+                echo '</div>';
+            }
+            ?>
         </div>
 
         <?php
@@ -109,13 +127,29 @@ if (file_exists(__DIR__ . '/.env')) {
         echo '<h3><i class="fas fa-database me-2"></i>3. Database Connection</h3>';
         
         try {
-            require_once __DIR__ . '/config/database.php';
-            $dbConfig = require __DIR__ . '/config/database.php';
+            // Get database config from environment variables
+            $dbHost = $_ENV['DB_HOST'] ?? 'localhost';
+            $dbPort = $_ENV['DB_PORT'] ?? '3306';
+            $dbName = $_ENV['DB_DATABASE'] ?? '';
+            $dbUser = $_ENV['DB_USERNAME'] ?? '';
+            $dbPass = $_ENV['DB_PASSWORD'] ?? '';
             
-            $dsn = "mysql:host={$dbConfig['host']};port={$dbConfig['port']};dbname={$dbConfig['database']};charset=utf8mb4";
-            $pdo = new PDO($dsn, $dbConfig['username'], $dbConfig['password']);
+            if (empty($dbName) || empty($dbUser)) {
+                throw new Exception('Database credentials not found in .env file');
+            }
+            
+            $dsn = "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset=utf8mb4";
+            $pdo = new PDO($dsn, $dbUser, $dbPass);
             
             echo '<p class="status-ok"><i class="fas fa-check-circle me-2"></i>Database connection successful</p>';
+            
+            echo '<div class="code-block">';
+            echo '<strong>Configuration:</strong><br>';
+            echo 'Host: ' . htmlspecialchars($dbHost) . '<br>';
+            echo 'Port: ' . htmlspecialchars($dbPort) . '<br>';
+            echo 'Database: ' . htmlspecialchars($dbName) . '<br>';
+            echo 'Username: ' . htmlspecialchars($dbUser) . '<br>';
+            echo '</div>';
             
             // Check if users table has reset token columns
             $stmt = $pdo->query("DESCRIBE users");
@@ -141,6 +175,22 @@ ADD COLUMN reset_token_expires DATETIME NULL;</pre>';
             
         } catch (PDOException $e) {
             echo '<p class="status-error"><i class="fas fa-times-circle me-2"></i>Database connection failed</p>';
+            echo '<div class="code-block">';
+            echo '<strong>Error:</strong> ' . htmlspecialchars($e->getMessage()) . '<br><br>';
+            echo '<strong>Attempted Configuration:</strong><br>';
+            echo 'Host: ' . htmlspecialchars($dbHost ?? 'not set') . '<br>';
+            echo 'Port: ' . htmlspecialchars($dbPort ?? 'not set') . '<br>';
+            echo 'Database: ' . htmlspecialchars($dbName ?? 'not set') . '<br>';
+            echo 'Username: ' . htmlspecialchars($dbUser ?? 'not set') . '<br>';
+            echo 'Password: ' . ((!empty($dbPass)) ? '****** (set)' : 'NOT SET') . '<br><br>';
+            echo '<strong>Check:</strong><br>';
+            echo '1. Verify .env file exists in project root<br>';
+            echo '2. Verify DB_* variables are set in .env<br>';
+            echo '3. Verify database credentials are correct<br>';
+            echo '4. Verify MySQL server is running<br>';
+            echo '</div>';
+        } catch (Exception $e) {
+            echo '<p class="status-error"><i class="fas fa-times-circle me-2"></i>Configuration error</p>';
             echo '<div class="code-block">';
             echo '<strong>Error:</strong> ' . htmlspecialchars($e->getMessage());
             echo '</div>';
