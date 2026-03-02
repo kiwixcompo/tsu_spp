@@ -75,54 +75,51 @@ if (!function_exists('url')) {
                                 <button class="btn btn-success" onclick="bulkActivate()" id="bulkActivateBtn" disabled><i class="fas fa-check me-2"></i>Activate</button>
                                 <button class="btn btn-warning" onclick="bulkSuspend()" id="bulkSuspendBtn" disabled><i class="fas fa-ban me-2"></i>Suspend</button>
                                 <button class="btn btn-danger" onclick="bulkDelete()" id="bulkDeleteBtn" disabled><i class="fas fa-trash me-2"></i>Delete</button>
+                                <button class="btn btn-outline-success" onclick="exportToExcel()"><i class="fas fa-file-excel me-2"></i>Export to Excel</button>
                                 <span class="badge bg-secondary align-self-center ms-2 fs-6"><span id="selectedCount">0</span> selected</span>
                             </div>
                             
-                            <div class="row g-2">
+                            <div class="row g-2 mb-3">
                                 <div class="col-md-6">
-                                    <input type="text" id="userSearch" class="form-control" placeholder="Search by Name, Staff ID, Email, Faculty, or Unit..." onkeyup="filterUsers()">
+                                    <input type="text" id="userSearch" class="form-control" placeholder="Search by Name, Staff ID, Email, Faculty, or Unit...">
                                 </div>
                                 <div class="col-md-6 text-end">
-                                    <span class="text-muted">Showing <span id="visibleCount"><?= count($users ?? []) ?></span> of <?= $total_users ?? 0 ?> users</span>
+                                    <span class="text-muted">Showing <span id="visibleCount"><?= count($users ?? []) ?></span> of <span id="totalCount"><?= $total_users ?? 0 ?></span> users</span>
+                                </div>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <select id="staffTypeFilter" class="form-select" onchange="performSearch()">
+                                        <option value="">All Staff Types</option>
+                                        <option value="teaching">Teaching Staff</option>
+                                        <option value="non-teaching">Non-Teaching Staff</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select id="genderFilter" class="form-select" onchange="performSearch()">
+                                        <option value="">All Genders</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select id="facultyFilter" class="form-select" onchange="performSearch()">
+                                        <option value="">All Faculties</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select id="unitFilter" class="form-select" onchange="performSearch()">
+                                        <option value="">All Units</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Top Pagination -->
-                    <?php if (($total_pages ?? 1) > 1): ?>
-                    <nav aria-label="Page navigation" class="mb-3">
-                        <ul class="pagination justify-content-center">
-                            <li class="page-item <?= ($current_page ?? 1) <= 1 ? 'disabled' : '' ?>">
-                                <a class="page-link" href="?page=<?= ($current_page ?? 1) - 1 ?>">Previous</a>
-                            </li>
-                            
-                            <?php
-                            $start = max(1, ($current_page ?? 1) - 2);
-                            $end = min(($total_pages ?? 1), ($current_page ?? 1) + 2);
-                            
-                            if ($start > 1): ?>
-                                <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
-                                <?php if ($start > 2): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
-                            <?php endif;
-                            
-                            for ($i = $start; $i <= $end; $i++): ?>
-                                <li class="page-item <?= $i === ($current_page ?? 1) ? 'active' : '' ?>">
-                                    <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
-                                </li>
-                            <?php endfor;
-                            
-                            if ($end < ($total_pages ?? 1)): ?>
-                                <?php if ($end < ($total_pages ?? 1) - 1): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
-                                <li class="page-item"><a class="page-link" href="?page=<?= $total_pages ?>"><?= $total_pages ?></a></li>
-                            <?php endif; ?>
-                            
-                            <li class="page-item <?= ($current_page ?? 1) >= ($total_pages ?? 1) ? 'disabled' : '' ?>">
-                                <a class="page-link" href="?page=<?= ($current_page ?? 1) + 1 ?>">Next</a>
-                            </li>
-                        </ul>
+                    <!-- Pagination Container -->
+                    <nav aria-label="Page navigation" class="mb-3" id="paginationTop">
                     </nav>
-                    <?php endif; ?>
 
                     <div class="card">
                         <div class="card-body p-0">
@@ -139,12 +136,12 @@ if (!function_exists('url')) {
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody id="usersTableBody">
                                         <?php if (empty($users)): ?>
                                             <tr><td colspan="7" class="text-center p-4 text-muted">No users found</td></tr>
                                         <?php else: ?>
                                             <?php foreach ($users as $user): ?>
-                                                <tr class="user-row" data-name="<?= strtolower(($user['first_name']??'').' '.($user['last_name']??'').' '.($user['email']??'').' '.($user['staff_number']??'').' '.($user['faculty']??'').' '.($user['unit']??'')) ?>">
+                                                <tr class="user-row">
                                                     <td>
                                                         <?php if (($user['role'] ?? 'user') !== 'admin'): ?>
                                                             <input type="checkbox" class="user-checkbox" value="<?= $user['id'] ?>" onchange="updateBulkButtons()">
@@ -182,39 +179,8 @@ if (!function_exists('url')) {
                     </div>
 
                     <!-- Bottom Pagination -->
-                    <?php if (($total_pages ?? 1) > 1): ?>
-                    <nav aria-label="Page navigation" class="mt-3">
-                        <ul class="pagination justify-content-center">
-                            <li class="page-item <?= ($current_page ?? 1) <= 1 ? 'disabled' : '' ?>">
-                                <a class="page-link" href="?page=<?= ($current_page ?? 1) - 1 ?>">Previous</a>
-                            </li>
-                            
-                            <?php
-                            $start = max(1, ($current_page ?? 1) - 2);
-                            $end = min(($total_pages ?? 1), ($current_page ?? 1) + 2);
-                            
-                            if ($start > 1): ?>
-                                <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
-                                <?php if ($start > 2): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
-                            <?php endif;
-                            
-                            for ($i = $start; $i <= $end; $i++): ?>
-                                <li class="page-item <?= $i === ($current_page ?? 1) ? 'active' : '' ?>">
-                                    <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
-                                </li>
-                            <?php endfor;
-                            
-                            if ($end < ($total_pages ?? 1)): ?>
-                                <?php if ($end < ($total_pages ?? 1) - 1): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
-                                <li class="page-item"><a class="page-link" href="?page=<?= $total_pages ?>"><?= $total_pages ?></a></li>
-                            <?php endif; ?>
-                            
-                            <li class="page-item <?= ($current_page ?? 1) >= ($total_pages ?? 1) ? 'disabled' : '' ?>">
-                                <a class="page-link" href="?page=<?= ($current_page ?? 1) + 1 ?>">Next</a>
-                            </li>
-                        </ul>
+                    <nav aria-label="Page navigation" class="mt-3" id="paginationBottom">
                     </nav>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -245,6 +211,8 @@ if (!function_exists('url')) {
     
     <script>
         const csrfToken = '<?= $_SESSION['csrf_token'] ?? '' ?>';
+        let searchTimeout = null;
+        let currentPage = 1;
 
         // Sidebar Toggle
         function toggleSidebar() {
@@ -252,37 +220,254 @@ if (!function_exists('url')) {
             document.getElementById('mainContent').classList.toggle('expanded');
         }
 
-        // Search Filter - Real-time
-        function filterUsers() {
-            const filter = document.getElementById('userSearch').value.toLowerCase();
-            const rows = document.querySelectorAll('.user-row');
-            let visibleCount = 0;
-            
-            rows.forEach(row => {
-                const text = row.getAttribute('data-name');
-                if (text && text.includes(filter)) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
+        // Debounced search function
+        document.getElementById('userSearch').addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentPage = 1;
+                performSearch();
+            }, 500);
+        });
+
+        // Perform AJAX search with filters
+        function performSearch(page = 1) {
+            currentPage = page;
+            const query = document.getElementById('userSearch').value;
+            const staffType = document.getElementById('staffTypeFilter').value;
+            const gender = document.getElementById('genderFilter').value;
+            const faculty = document.getElementById('facultyFilter').value;
+            const unit = document.getElementById('unitFilter').value;
+
+            const params = new URLSearchParams({
+                query: query,
+                staff_type: staffType,
+                gender: gender,
+                faculty: faculty,
+                unit: unit,
+                page: page
             });
-            
-            // Update visible count
-            document.getElementById('visibleCount').textContent = visibleCount;
+
+            fetch('<?= url('/admin/users/search') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-Token': csrfToken
+                },
+                body: params
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateUserTable(data.users);
+                    updatePagination(data.pagination);
+                    document.getElementById('visibleCount').textContent = data.users.length;
+                    document.getElementById('totalCount').textContent = data.pagination.total_users;
+                } else {
+                    alert('Search failed: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                alert('Search failed. Please try again.');
+            });
         }
 
-        // Initialize search on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('userSearch');
-            if (searchInput) {
-                // Clear search on page load
-                searchInput.value = '';
-                
-                // Add real-time search listener
-                searchInput.addEventListener('input', filterUsers);
-                searchInput.addEventListener('keyup', filterUsers);
+        // Update user table with search results
+        function updateUserTable(users) {
+            const tbody = document.getElementById('usersTableBody');
+            
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-muted">No users found</td></tr>';
+                return;
             }
+
+            let html = '';
+            users.forEach(user => {
+                const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+                const staffNumber = user.staff_number || '-';
+                const email = user.email || '';
+                
+                let facultyUnit = '-';
+                if (user.unit) {
+                    facultyUnit = `<span class="badge bg-info">${escapeHtml(user.unit)}</span>`;
+                } else if (user.faculty) {
+                    facultyUnit = escapeHtml(user.faculty);
+                }
+
+                const statusClass = user.account_status === 'active' ? 'success' : (user.account_status === 'pending' ? 'warning' : 'danger');
+                const statusText = user.account_status ? user.account_status.charAt(0).toUpperCase() + user.account_status.slice(1) : 'Unknown';
+
+                const isAdmin = user.role === 'admin';
+
+                html += `
+                    <tr class="user-row">
+                        <td>
+                            ${!isAdmin ? `<input type="checkbox" class="user-checkbox" value="${user.id}" onchange="updateBulkButtons()">` : ''}
+                        </td>
+                        <td>${escapeHtml(fullName)}</td>
+                        <td class="fw-bold text-primary">${escapeHtml(staffNumber)}</td>
+                        <td>${escapeHtml(email)}</td>
+                        <td>${facultyUnit}</td>
+                        <td><span class="badge bg-${statusClass}">${statusText}</span></td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="generateIDCard(${user.id})" title="Generate ID"><i class="fas fa-id-card"></i></button>
+                                <button class="btn btn-outline-success" onclick="activateUser(${user.id})" title="Activate"><i class="fas fa-check"></i></button>
+                                <button class="btn btn-outline-danger" onclick="deleteUser(${user.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            updateBulkButtons();
+        }
+
+        // Update pagination
+        function updatePagination(pagination) {
+            const { current_page, total_pages } = pagination;
+            
+            if (total_pages <= 1) {
+                document.getElementById('paginationTop').innerHTML = '';
+                document.getElementById('paginationBottom').innerHTML = '';
+                return;
+            }
+
+            const paginationHTML = generatePaginationHTML(current_page, total_pages);
+            document.getElementById('paginationTop').innerHTML = paginationHTML;
+            document.getElementById('paginationBottom').innerHTML = paginationHTML;
+        }
+
+        // Generate pagination HTML
+        function generatePaginationHTML(currentPage, totalPages) {
+            let html = '<ul class="pagination justify-content-center">';
+            
+            // Previous button
+            html += `<li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="performSearch(${currentPage - 1}); return false;">Previous</a>
+            </li>`;
+
+            // Page numbers
+            const start = Math.max(1, currentPage - 2);
+            const end = Math.min(totalPages, currentPage + 2);
+
+            if (start > 1) {
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="performSearch(1); return false;">1</a></li>`;
+                if (start > 2) {
+                    html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+            }
+
+            for (let i = start; i <= end; i++) {
+                html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="performSearch(${i}); return false;">${i}</a>
+                </li>`;
+            }
+
+            if (end < totalPages) {
+                if (end < totalPages - 1) {
+                    html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="performSearch(${totalPages}); return false;">${totalPages}</a></li>`;
+            }
+
+            // Next button
+            html += `<li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="performSearch(${currentPage + 1}); return false;">Next</a>
+            </li>`;
+
+            html += '</ul>';
+            return html;
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            const staffType = document.getElementById('staffTypeFilter').value;
+            const gender = document.getElementById('genderFilter').value;
+            const faculty = document.getElementById('facultyFilter').value;
+            const unit = document.getElementById('unitFilter').value;
+
+            const params = new URLSearchParams({
+                staff_type: staffType,
+                gender: gender,
+                faculty: faculty,
+                unit: unit
+            });
+
+            window.location.href = '<?= url('/admin/users/export') ?>?' + params.toString();
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load faculties and units for filters
+        function loadFilterOptions() {
+            fetch('<?= url('/faculties-departments') ?>')
+                .then(response => response.json())
+                .then(data => {
+                    const facultySelect = document.getElementById('facultyFilter');
+                    const faculties = new Set();
+                    
+                    data.forEach(item => {
+                        if (item.faculty) faculties.add(item.faculty);
+                    });
+
+                    faculties.forEach(faculty => {
+                        const option = document.createElement('option');
+                        option.value = faculty;
+                        option.textContent = faculty;
+                        facultySelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error loading faculties:', error));
+
+            // Load units
+            fetch('<?= url('/faculties-departments') ?>')
+                .then(response => response.json())
+                .then(data => {
+                    const unitSelect = document.getElementById('unitFilter');
+                    
+                    // Get unique units from profiles
+                    fetch('<?= url('/admin/users/search') ?>', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-Token': csrfToken
+                        },
+                        body: 'query='
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const units = new Set();
+                            data.users.forEach(user => {
+                                if (user.unit) units.add(user.unit);
+                            });
+
+                            units.forEach(unit => {
+                                const option = document.createElement('option');
+                                option.value = unit;
+                                option.textContent = unit;
+                                unitSelect.appendChild(option);
+                            });
+                        }
+                    });
+                })
+                .catch(error => console.error('Error loading units:', error));
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFilterOptions();
+            updatePagination({
+                current_page: <?= $current_page ?? 1 ?>,
+                total_pages: <?= $total_pages ?? 1 ?>
+            });
         });
 
         // Checkbox Logic

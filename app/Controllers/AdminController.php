@@ -1477,4 +1477,241 @@ class AdminController extends Controller
             $this->json(['error' => 'Failed to delete unit'], 500);
         }
     }
+
+    /**
+     * Search users with filters (AJAX endpoint)
+     */
+    public function searchUsers(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        $query = $this->sanitizeInput($this->input('query') ?? '');
+        $staffType = $this->sanitizeInput($this->input('staff_type') ?? '');
+        $gender = $this->sanitizeInput($this->input('gender') ?? '');
+        $faculty = $this->sanitizeInput($this->input('faculty') ?? '');
+        $unit = $this->sanitizeInput($this->input('unit') ?? '');
+        $page = (int)($this->input('page') ?: 1);
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+
+        try {
+            // Build WHERE clause
+            $conditions = [];
+            $params = [];
+
+            if (!empty($query)) {
+                $conditions[] = "(p.first_name LIKE ? OR p.last_name LIKE ? OR u.email LIKE ? OR p.staff_number LIKE ? OR p.faculty LIKE ? OR p.unit LIKE ?)";
+                $searchTerm = "%$query%";
+                $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
+            }
+
+            if (!empty($staffType)) {
+                $conditions[] = "p.staff_type = ?";
+                $params[] = $staffType;
+            }
+
+            if (!empty($gender)) {
+                $conditions[] = "p.gender = ?";
+                $params[] = $gender;
+            }
+
+            if (!empty($faculty)) {
+                $conditions[] = "p.faculty = ?";
+                $params[] = $faculty;
+            }
+
+            if (!empty($unit)) {
+                $conditions[] = "p.unit = ?";
+                $params[] = $unit;
+            }
+
+            $whereClause = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
+
+            // Get total count
+            $countQuery = "SELECT COUNT(*) as count FROM users u LEFT JOIN profiles p ON u.id = p.user_id $whereClause";
+            $totalUsers = $this->db->fetch($countQuery, $params)['count'];
+            $totalPages = ceil($totalUsers / $limit);
+
+            // Get users
+            $usersQuery = "
+                SELECT u.id, u.email, u.account_status, u.email_verified, u.created_at, u.last_login, u.role,
+                       p.first_name, p.last_name, p.faculty, p.department, p.unit, p.designation, p.staff_number, p.profile_slug, p.staff_type, p.gender
+                FROM users u
+                LEFT JOIN profiles p ON u.id = p.user_id
+                $whereClause
+                ORDER BY u.created_at DESC
+                LIMIT ? OFFSET ?
+            ";
+            $params[] = $limit;
+            $params[] = $offset;
+
+            $users = $this->db->fetchAll($usersQuery, $params);
+
+            $this->json([
+                'success' => true,
+                'users' => $users,
+                'pagination' => [
+                    'current_page' => $page,
+                    'total_pages' => $totalPages,
+                    'total_users' => $totalUsers,
+                    'per_page' => $limit
+                ]
+            ]);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Search failed: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Export users to Excel with categorized sheets
+     */
+    public function exportUsers(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        try {
+            // Check if PHPSpreadsheet is available
+            if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+                $this->json(['error' => 'PHPSpreadsheet library not installed. Run: composer require phpoffice/phpspreadsheet'], 500);
+                return;
+            }
+
+            // Get filter parameters
+            $staffType = $this->sanitizeInput($this->input('staff_type') ?? '');
+            $gender = $this->sanitizeInput($this->input('gender') ?? '');
+            $faculty = $this->sanitizeInput($this->input('faculty') ?? '');
+            $unit = $this->sanitizeInput($this->input('unit') ?? '');
+
+            // Build WHERE clause
+            $conditions = [];
+            $params = [];
+
+            if (!empty($staffType)) {
+                $conditions[] = "p.staff_type = ?";
+                $params[] = $staffType;
+            }
+
+            if (!empty($gender)) {
+                $conditions[] = "p.gender = ?";
+                $params[] = $gender;
+            }
+
+            if (!empty($faculty)) {
+                $conditions[] = "p.faculty = ?";
+                $params[] = $faculty;
+            }
+
+            if (!empty($unit)) {
+                $conditions[] = "p.unit = ?";
+                $params[] = $unit;
+            }
+
+            $whereClause = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
+
+            // Get all users matching filters
+            $query = "
+                SELECT u.id, u.email, u.account_status, u.email_verified, u.created_at, u.role,
+                       p.first_name, p.last_name, p.faculty, p.department, p.unit, p.designation, 
+                       p.staff_number, p.staff_type, p.gender, p.phone
+                FROM users u
+                LEFT JOIN profiles p ON u.id = p.user_id
+                $whereClause
+                ORDER BY p.faculty, p.unit, p.last_name
+            ";
+
+            $users = $this->db->fetchAll($query, $params);
+
+            if (empty($users)) {
+                $this->json(['error' => 'No users found to export'], 404);
+                return;
+            }
+
+            // Group users by faculty/unit
+            $grouped = [];
+            foreach ($users as $user) {
+                $category = !empty($user['faculty']) ? $user['faculty'] : (!empty($user['unit']) ? $user['unit'] : 'Uncategorized');
+                if (!isset($grouped[$category])) {
+                    $grouped[$category] = [];
+                }
+                $grouped[$category][] = $user;
+            }
+
+            // Create spreadsheet
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $spreadsheet->removeSheetByIndex(0); // Remove default sheet
+
+            $sheetIndex = 0;
+            foreach ($grouped as $category => $categoryUsers) {
+                // Create sheet for this category
+                $sheet = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, substr($category, 0, 31)); // Excel sheet name limit
+                $spreadsheet->addSheet($sheet, $sheetIndex++);
+
+                // Set headers
+                $headers = ['#', 'Staff Number', 'Full Name', 'Email', 'Phone', 'Faculty', 'Department', 'Unit', 'Designation', 'Staff Type', 'Gender', 'Status', 'Email Verified', 'Registered Date'];
+                $sheet->fromArray($headers, null, 'A1');
+
+                // Style headers
+                $headerStyle = [
+                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                    'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
+                    'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
+                ];
+                $sheet->getStyle('A1:N1')->applyFromArray($headerStyle);
+
+                // Add data
+                $row = 2;
+                foreach ($categoryUsers as $index => $user) {
+                    $sheet->fromArray([
+                        $index + 1,
+                        $user['staff_number'] ?? 'N/A',
+                        trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')),
+                        $user['email'] ?? '',
+                        $user['phone'] ?? 'N/A',
+                        $user['faculty'] ?? 'N/A',
+                        $user['department'] ?? 'N/A',
+                        $user['unit'] ?? 'N/A',
+                        $user['designation'] ?? 'N/A',
+                        $user['staff_type'] ?? 'N/A',
+                        $user['gender'] ?? 'N/A',
+                        ucfirst($user['account_status'] ?? 'unknown'),
+                        $user['email_verified'] ? 'Yes' : 'No',
+                        date('Y-m-d', strtotime($user['created_at'] ?? 'now'))
+                    ], null, 'A' . $row);
+                    $row++;
+                }
+
+                // Auto-size columns
+                foreach (range('A', 'N') as $col) {
+                    $sheet->getColumnDimension($col)->setAutoSize(true);
+                }
+            }
+
+            // Set active sheet to first
+            $spreadsheet->setActiveSheetIndex(0);
+
+            // Generate filename
+            $filename = 'TSU_Staff_Export_' . date('Y-m-d_His') . '.xlsx';
+
+            // Set headers for download
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+
+            // Write file to output
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+
+            $this->logActivity('users_exported', [
+                'total_users' => count($users),
+                'categories' => count($grouped),
+                'filters' => compact('staffType', 'gender', 'faculty', 'unit')
+            ]);
+
+            exit;
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Export failed: ' . $e->getMessage()], 500);
+        }
+    }
 }
