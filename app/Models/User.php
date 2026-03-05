@@ -94,7 +94,7 @@ class User
             'users',
             [
                 'reset_token' => $token,
-                'reset_expires' => $expires,
+                'reset_token_expires' => $expires,
             ],
             'id = ?',
             [$userId]
@@ -104,7 +104,7 @@ class User
     public function findByResetToken(string $token): ?array
     {
         return $this->db->fetch(
-            "SELECT * FROM users WHERE reset_token = ? AND reset_expires > NOW()",
+            "SELECT * FROM users WHERE reset_token = ? AND reset_token_expires > NOW()",
             [$token]
         );
     }
