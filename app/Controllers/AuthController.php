@@ -449,26 +449,37 @@ class AuthController extends Controller
         $email = $this->sanitizeInput($this->input('email'));
         $user = $this->userModel->findByEmail($email);
 
-        // Always return success to prevent email enumeration
-        $this->json([
-            'success' => true,
-            'message' => 'If an account with that email exists, a password reset link has been sent.',
-        ]);
-
+        // Process email sending BEFORE returning response
         if ($user && $user['email_verified']) {
             try {
                 $resetToken = bin2hex(random_bytes(32));
                 $resetExpires = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
+                error_log("Forgot Password: Generating reset token for {$email}");
+                
                 $this->userModel->setPasswordResetToken($user['id'], $resetToken, $resetExpires);
-                $this->emailHelper->sendPasswordResetEmail($email, $resetToken);
+                
+                error_log("Forgot Password: Token saved to database, now sending email");
+                
+                $emailResult = $this->emailHelper->sendPasswordResetEmail($email, $resetToken);
+                
+                error_log("Forgot Password: Email send result: " . ($emailResult ? 'SUCCESS' : 'FAILED'));
 
                 $this->logActivity('password_reset_requested', ['email' => $email]);
             } catch (\Exception $e) {
                 // Log error but don't reveal to user
                 error_log("Password reset failed for {$email}: " . $e->getMessage());
+                error_log("Stack trace: " . $e->getTraceAsString());
             }
+        } else {
+            error_log("Forgot Password: User not found or email not verified for {$email}");
         }
+
+        // Always return success to prevent email enumeration (after processing)
+        $this->json([
+            'success' => true,
+            'message' => 'If an account with that email exists, a password reset link has been sent.',
+        ]);
     }
 
     public function resendVerification(): void
