@@ -288,7 +288,7 @@ SecurityHelper::setSecurityHeaders();
                             <div id="non-teaching-fields" class="field-group">
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Non-Teaching Staff:</strong> Select where you work - either a Unit/Office OR a Faculty/Department
+                                    <strong>Non-Teaching Staff:</strong> Select where you work - either a Unit/Office OR a Faculty (Department is optional)
                                 </div>
 
                                 <div class="mb-3">
@@ -334,7 +334,7 @@ SecurityHelper::setSecurityHeaders();
 
                                 <div id="non-teaching-error" class="alert alert-danger" style="display:none;">
                                     <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Please select either a Unit/Office OR a Faculty/Department
+                                    Please select either a Unit/Office OR a Faculty
                                 </div>
                             </div>
 
@@ -696,15 +696,14 @@ SecurityHelper::setSecurityHeaders();
                     return false;
                 }
             } else {
-                // Non-teaching staff must select EITHER unit OR faculty/department
+                // Non-teaching staff must select EITHER unit OR faculty (department is optional)
                 const unit = document.getElementById('unit').value;
                 const faculty = document.getElementById('faculty_nt').value;
-                const department = document.getElementById('department_nt').value;
                 
                 // Check if neither option is selected
-                if (!unit && !faculty && !department) {
+                if (!unit && !faculty) {
                     document.getElementById('non-teaching-error').style.display = 'block';
-                    alert('Non-teaching staff must select either a Unit/Office OR a Faculty/Department.');
+                    alert('Non-teaching staff must select either a Unit/Office OR a Faculty.');
                     return false;
                 }
                 

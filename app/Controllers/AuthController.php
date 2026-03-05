@@ -93,20 +93,18 @@ class AuthController extends Controller
                 $errors['department'] = 'Department is required for teaching staff';
             }
         } else {
-            // Non-teaching staff: either unit OR (faculty + department) required
+            // Non-teaching staff: either unit OR faculty (with optional department) required
             $unit = $this->sanitizeInput($this->input('unit'));
             $faculty = $this->sanitizeInput($this->input('faculty_nt'));
             $department = $this->sanitizeInput($this->input('department_nt'));
             
-            // Check if at least one option is selected
-            if (empty($unit) && empty($faculty) && empty($department)) {
-                $errors['staff_location'] = 'Please select either a Unit/Office OR Faculty/Department';
+            // Check if at least one option is selected (unit OR faculty)
+            if (empty($unit) && empty($faculty)) {
+                $errors['staff_location'] = 'Please select either a Unit/Office OR Faculty';
             }
             
-            // If faculty is selected, department must also be selected
-            if (!empty($faculty) && empty($department)) {
-                $errors['department'] = 'Please select a department for the selected faculty';
-            }
+            // Note: Department is optional for non-teaching staff at faculty level
+            // They can work at faculty level without being assigned to a specific department
         }
 
         $email = $emailPrefix . '@tsuniversity.edu.ng';
