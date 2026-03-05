@@ -735,16 +735,16 @@ class AdminController extends Controller
                 }
             }
 
-            // Delete related records
-            $this->db->delete('profiles', 'user_id = ?', [$userId]);
-            $this->db->delete('publications', 'user_id = ?', [$userId]);
-            $this->db->delete('education', 'user_id = ?', [$userId]);
-            $this->db->delete('experience', 'user_id = ?', [$userId]);
-            $this->db->delete('skills', 'user_id = ?', [$userId]);
-            $this->db->delete('certifications', 'user_id = ?', [$userId]);
-            $this->db->delete('awards', 'user_id = ?', [$userId]);
-            $this->db->delete('memberships', 'user_id = ?', [$userId]);
-            $this->db->delete('activity_logs', 'user_id = ?', [$userId]);
+            // Delete related records (only from tables that exist)
+            $this->safeDeleteFromTable('profiles', 'user_id = ?', [$userId]);
+            $this->safeDeleteFromTable('publications', 'user_id = ?', [$userId]);
+            $this->safeDeleteFromTable('education', 'user_id = ?', [$userId]);
+            $this->safeDeleteFromTable('experience', 'user_id = ?', [$userId]);
+            $this->safeDeleteFromTable('skills', 'user_id = ?', [$userId]);
+            $this->safeDeleteFromTable('certifications', 'user_id = ?', [$userId]);
+            $this->safeDeleteFromTable('awards', 'user_id = ?', [$userId]);
+            $this->safeDeleteFromTable('memberships', 'user_id = ?', [$userId]);
+            $this->safeDeleteFromTable('activity_logs', 'user_id = ?', [$userId]);
 
             // Finally delete the user
             $result = $this->db->delete('users', 'id = ?', [$userId]);
@@ -764,6 +764,43 @@ class AdminController extends Controller
             // Rollback on failure
             try { $this->db->rollback(); } catch (\Exception $_) {}
             $this->json(['error' => 'Deletion failed: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Safely delete from a table (ignores if table doesn't exist)
+     */
+    private function safeDeleteFromTable(string $table, string $where, array $params): void
+    {
+        try {
+            $this->db->delete($table, $where, $params);
+        } catch (\Exception $e) {
+            // If table doesn't exist, just log and continue
+            if (strpos($e->getMessage(), 'Base table or view not found') !== false) {
+                error_log("Table '$table' does not exist, skipping deletion");
+            } else {
+                // Re-throw other exceptions
+                throw $e;
+            }
+        }
+    }
+
+    /**
+     * Safely delete from a table in bulk (ignores if table doesn't exist)
+     */
+    private function safeDeleteBulkFromTable(string $table, string $column, array $ids): void
+    {
+        try {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $this->db->query("DELETE FROM $table WHERE $column IN ($placeholders)", $ids);
+        } catch (\Exception $e) {
+            // If table doesn't exist, just log and continue
+            if (strpos($e->getMessage(), 'Base table or view not found') !== false) {
+                error_log("Table '$table' does not exist, skipping bulk deletion");
+            } else {
+                // Re-throw other exceptions
+                throw $e;
+            }
         }
     }
 
@@ -808,16 +845,16 @@ class AdminController extends Controller
 
             $this->db->beginTransaction();
 
-            // Delete related records for all users
-            $this->db->query("DELETE FROM profiles WHERE user_id IN ($placeholders)", $userIds);
-            $this->db->query("DELETE FROM publications WHERE user_id IN ($placeholders)", $userIds);
-            $this->db->query("DELETE FROM education WHERE user_id IN ($placeholders)", $userIds);
-            $this->db->query("DELETE FROM experience WHERE user_id IN ($placeholders)", $userIds);
-            $this->db->query("DELETE FROM skills WHERE user_id IN ($placeholders)", $userIds);
-            $this->db->query("DELETE FROM certifications WHERE user_id IN ($placeholders)", $userIds);
-            $this->db->query("DELETE FROM awards WHERE user_id IN ($placeholders)", $userIds);
-            $this->db->query("DELETE FROM memberships WHERE user_id IN ($placeholders)", $userIds);
-            $this->db->query("DELETE FROM activity_logs WHERE user_id IN ($placeholders)", $userIds);
+            // Delete related records for all users (only from tables that exist)
+            $this->safeDeleteBulkFromTable('profiles', 'user_id', $userIds);
+            $this->safeDeleteBulkFromTable('publications', 'user_id', $userIds);
+            $this->safeDeleteBulkFromTable('education', 'user_id', $userIds);
+            $this->safeDeleteBulkFromTable('experience', 'user_id', $userIds);
+            $this->safeDeleteBulkFromTable('skills', 'user_id', $userIds);
+            $this->safeDeleteBulkFromTable('certifications', 'user_id', $userIds);
+            $this->safeDeleteBulkFromTable('awards', 'user_id', $userIds);
+            $this->safeDeleteBulkFromTable('memberships', 'user_id', $userIds);
+            $this->safeDeleteBulkFromTable('activity_logs', 'user_id', $userIds);
 
             // Delete users
             $result = $this->db->query(
