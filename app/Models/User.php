@@ -125,7 +125,7 @@ class User
             'users',
             [
                 'reset_token' => null,
-                'reset_expires' => null,
+                'reset_token_expires' => null,
             ],
             'id = ?',
             [$userId]
