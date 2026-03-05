@@ -6,6 +6,9 @@
  * Usage: Access via browser at /test_forgot_password.php
  */
 
+// Start session for CSRF token
+session_start();
+
 // Load environment
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -21,6 +24,12 @@ if (file_exists(__DIR__ . '/.env')) {
         putenv("$name=$value");
     }
 }
+
+// Generate CSRF token if not exists
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION['csrf_token'];
 
 ?>
 <!DOCTYPE html>
@@ -300,6 +309,8 @@ ADD COLUMN reset_token_expires DATETIME NULL;</pre>';
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const csrfToken = '<?= $csrfToken ?>';
+        
         document.getElementById('testForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -310,6 +321,7 @@ ADD COLUMN reset_token_expires DATETIME NULL;</pre>';
             
             const formData = new FormData();
             formData.append('email', email);
+            formData.append('csrf_token', csrfToken);
             
             fetch('/forgot-password', {
                 method: 'POST',
