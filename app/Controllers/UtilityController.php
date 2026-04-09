@@ -88,4 +88,69 @@ class UtilityController extends Controller
             'data' => $this->getFacultyDepartmentMapping()
         ]);
     }
+
+    public function getDirectorates(): void
+    {
+        if (!$this->db) {
+            $this->json(['status' => 'error', 'data' => []], 500);
+            return;
+        }
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT id, name FROM directorates WHERE is_active = 1 ORDER BY display_order, name"
+            );
+            $this->json(['status' => 'success', 'data' => $rows]);
+        } catch (\Exception $e) {
+            $this->json(['status' => 'error', 'data' => []], 500);
+        }
+    }
+
+    public function getDirectorateUnits(string $directorateId): void
+    {
+        if (!$this->db) {
+            $this->json(['status' => 'error', 'data' => []], 500);
+            return;
+        }
+        try {
+            $units = $this->db->fetchAll(
+                "SELECT unit_name FROM directorate_units 
+                 WHERE directorate_id = ? AND is_active = 1 
+                 ORDER BY display_order, unit_name",
+                [(int)$directorateId]
+            );
+            $this->json(['status' => 'success', 'data' => array_column($units, 'unit_name')]);
+        } catch (\Exception $e) {
+            $this->json(['status' => 'error', 'data' => []], 500);
+        }
+    }
+
+    public function getAllDirectoratesAndUnits(): void
+    {
+        if (!$this->db) {
+            $this->json(['status' => 'error', 'data' => []], 500);
+            return;
+        }
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT d.id, d.name AS directorate, du.unit_name
+                 FROM directorates d
+                 LEFT JOIN directorate_units du ON du.directorate_id = d.id AND du.is_active = 1
+                 WHERE d.is_active = 1
+                 ORDER BY d.display_order, d.name, du.display_order, du.unit_name"
+            );
+            $data = [];
+            foreach ($rows as $row) {
+                $dir = $row['directorate'];
+                if (!isset($data[$dir])) {
+                    $data[$dir] = ['id' => $row['id'], 'units' => []];
+                }
+                if ($row['unit_name']) {
+                    $data[$dir]['units'][] = $row['unit_name'];
+                }
+            }
+            $this->json(['status' => 'success', 'data' => $data]);
+        } catch (\Exception $e) {
+            $this->json(['status' => 'error', 'data' => []], 500);
+        }
+    }
 }

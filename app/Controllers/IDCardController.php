@@ -30,7 +30,7 @@ class IDCardController extends Controller
             $users = $this->db->fetchAll("
                 SELECT u.id, u.email, 
                        p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
-                       p.designation, p.faculty, p.department, p.unit, p.staff_type, p.profile_photo, 
+                       p.designation, p.faculty, p.department, p.unit, p.directorate, p.staff_type, p.profile_photo, 
                        p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
                 FROM users u
                 INNER JOIN profiles p ON u.id = p.user_id
@@ -62,7 +62,7 @@ class IDCardController extends Controller
         $profile = $this->db->fetch("
             SELECT u.id, u.email, 
                    p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
-                   p.designation, p.faculty, p.department, p.unit, p.staff_type, p.profile_photo, 
+                   p.designation, p.faculty, p.department, p.unit, p.directorate, p.staff_type, p.profile_photo, 
                    p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
             FROM users u
             INNER JOIN profiles p ON u.id = p.user_id
@@ -114,7 +114,7 @@ class IDCardController extends Controller
         $profile = $this->db->fetch("
             SELECT u.id, u.email, 
                    p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
-                   p.designation, p.faculty, p.department, p.unit, p.staff_type, p.profile_photo, 
+                   p.designation, p.faculty, p.department, p.unit, p.directorate, p.staff_type, p.profile_photo, 
                    p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
             FROM users u
             INNER JOIN profiles p ON u.id = p.user_id
@@ -137,7 +137,7 @@ class IDCardController extends Controller
         ], 'user_id = ?', [$userId]);
 
         // Decode HTML entities for proper display on ID card
-        $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'unit', 'designation', 'staff_number', 'email', 'blood_group'];
+        $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'unit', 'directorate', 'designation', 'staff_number', 'email', 'blood_group'];
         foreach ($textFields as $field) {
             if (isset($profile[$field])) {
                 $profile[$field] = html_entity_decode($profile[$field], ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -269,7 +269,7 @@ class IDCardController extends Controller
         $profiles = $this->db->fetchAll("
             SELECT u.id, u.email, 
                    p.id as profile_id, p.title, p.first_name, p.middle_name, p.last_name,
-                   p.designation, p.faculty, p.department, p.unit, p.staff_type, p.profile_photo, 
+                   p.designation, p.faculty, p.department, p.unit, p.directorate, p.staff_type, p.profile_photo, 
                    p.profile_slug, p.qr_code_path, p.staff_number, p.blood_group
             FROM users u
             INNER JOIN profiles p ON u.id = p.user_id
@@ -290,7 +290,7 @@ class IDCardController extends Controller
             $qrCodeUrl = $this->ensureQRCodeExists($userId, $profile['profile_slug'], $profile['qr_code_path']);
 
             // Decode HTML entities for safe display
-            $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'unit', 'designation', 'staff_number', 'email', 'blood_group'];
+            $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'unit', 'directorate', 'designation', 'staff_number', 'email', 'blood_group'];
             foreach ($textFields as $field) {
                 if (isset($profile[$field])) {
                     $profile[$field] = html_entity_decode($profile[$field], ENT_QUOTES | ENT_HTML5, 'UTF-8');

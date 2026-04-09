@@ -23,6 +23,18 @@ class DashboardController extends Controller
         }
     }
 
+    /**
+     * Check if a non-teaching staff member needs to update their profile
+     * to use the new Directorate/Unit structure.
+     * Returns true if: staff_type is non-teaching AND directorate column is empty.
+     */
+    private function needsDirectorateUpdate(?array $profile): bool
+    {
+        if (!$profile) return false;
+        if (($profile['staff_type'] ?? '') !== 'non-teaching') return false;
+        return empty($profile['directorate']);
+    }
+
     public function index(): void
     {
         $this->requireAuth();
@@ -145,6 +157,7 @@ class DashboardController extends Controller
             'profile_stats' => $profileStats,
             'recent_activity' => $recentActivity,
             'profile_views' => $profileViews,
+            'needs_directorate_update' => $this->needsDirectorateUpdate($profile),
         ]);
     }
 }

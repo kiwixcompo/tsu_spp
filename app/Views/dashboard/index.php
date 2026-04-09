@@ -149,6 +149,24 @@ if (!function_exists('escape_html')) {
                 </div>
 
                 <div class="p-4">
+                    <?php if (!empty($needs_directorate_update)): ?>
+                    <div class="alert alert-warning alert-dismissible d-flex align-items-start gap-3 mb-4" role="alert" style="border-left: 5px solid #f59e0b;">
+                        <i class="fas fa-exclamation-triangle fa-lg mt-1 text-warning"></i>
+                        <div class="flex-grow-1">
+                            <strong>Profile Update Required</strong>
+                            <p class="mb-2 mt-1">
+                                We've updated how non-teaching staff profiles are organised. 
+                                Your profile now needs a <strong>Directorate</strong> and <strong>Unit</strong> instead of the previous unit/office field. 
+                                Please update your profile to ensure your ID card and directory listing display correctly.
+                            </p>
+                            <a href="<?= url('profile/edit') ?>" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit me-1"></i>Update My Profile Now
+                            </a>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- Stats Cards -->
                     <div class="row mb-4">
                         <div class="col-md-3 mb-3">

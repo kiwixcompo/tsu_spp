@@ -134,6 +134,9 @@ $router->get('/qrcode/{filename}', 'IDCardController@serveQRCode');
 // Utility routes
 $router->get('/departments/{faculty}', 'UtilityController@getDepartments');
 $router->get('/faculties-departments', 'UtilityController@getAllFacultiesAndDepartments');
+$router->get('/directorates', 'UtilityController@getDirectorates');
+$router->get('/directorate-units/{directorateId}', 'UtilityController@getDirectorateUnits');
+$router->get('/directorates-units', 'UtilityController@getAllDirectoratesAndUnits');
 $router->get('/health', 'UtilityController@healthCheck');
 
 // ID Card Manager routes (for id_card_manager role and admin)

@@ -108,27 +108,30 @@ if (!function_exists('url')) {
 
                     <div style="margin-top: 15px; margin-left: 70px; margin-right: 15px; position: relative; z-index: 2; font-size: 12px;">
                         <?php 
-                        $hasUnit = !empty($profile['unit']) && trim($profile['unit']) !== '';
-                        $hasFaculty = !empty($profile['faculty']) && trim($profile['faculty']) !== '';
-                        $hasDepartment = !empty($profile['department']) && trim($profile['department']) !== '';
-                        
-                        if ($hasUnit && !$hasFaculty && !$hasDepartment): 
+                        $isNonTeaching = ($profile['staff_type'] ?? '') === 'non-teaching';
+                        $hasDirectorate = !empty($profile['directorate']);
+                        $hasUnit = !empty($profile['unit']);
+                        $hasFaculty = !empty($profile['faculty']);
+                        $hasDepartment = !empty($profile['department']);
                         ?>
                         <table style="width: 100%; border-collapse: collapse;">
-                            <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Staff ID:</td><td style="color: #111; font-weight: 600; vertical-align: top;"><?= htmlspecialchars($profile['staff_number'] ?? 'N/A') ?></td></tr>
-                            <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Unit:</td><td style="color: #1e3a8a; font-weight: 800; font-size: 14px; vertical-align: top; line-height: 1.3;"><?= htmlspecialchars($profile['unit']) ?></td></tr>
-                        </table>
-                        <?php else: ?>
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Staff ID:</td><td style="color: #111; font-weight: 600; vertical-align: top;"><?= htmlspecialchars($profile['staff_number'] ?? 'N/A') ?></td></tr>
-                            <?php if ($hasFaculty): ?>
-                            <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Faculty:</td><td style="color: #111; font-weight: 600; vertical-align: top;"><?= htmlspecialchars($profile['faculty']) ?></td></tr>
+                            <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px; white-space: nowrap;">Staff ID:</td><td style="color: #111; font-weight: 600; vertical-align: top;"><?= htmlspecialchars($profile['staff_number'] ?? 'N/A') ?></td></tr>
+                            <?php if ($isNonTeaching): ?>
+                                <?php if ($hasDirectorate): ?>
+                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px; white-space: nowrap;">Directorate:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.3;"><?= htmlspecialchars($profile['directorate']) ?></td></tr>
+                                <?php endif; ?>
+                                <?php if ($hasUnit): ?>
+                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px; white-space: nowrap;">Unit:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.3;"><?= htmlspecialchars($profile['unit']) ?></td></tr>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <?php if ($hasFaculty): ?>
+                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px; white-space: nowrap;">Faculty:</td><td style="color: #111; font-weight: 600; vertical-align: top;"><?= htmlspecialchars($profile['faculty']) ?></td></tr>
+                                <?php endif; ?>
+                                <?php if ($hasDepartment): ?>
+                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px; white-space: nowrap;">Dept:</td><td style="color: #111; font-weight: 600; vertical-align: top;"><?= htmlspecialchars($profile['department']) ?></td></tr>
+                                <?php endif; ?>
                             <?php endif; ?>
-                            <?php if ($hasDepartment): ?>
-                            <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px;">Dept:</td><td style="color: #111; font-weight: 600; vertical-align: top;"><?= htmlspecialchars($profile['department']) ?></td></tr>
-                            <?php endif; ?>
                         </table>
-                        <?php endif; ?>
                     </div>
 
                     <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: #1e40af; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; z-index: 2;">

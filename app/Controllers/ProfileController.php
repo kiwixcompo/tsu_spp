@@ -216,7 +216,8 @@ class ProfileController extends Controller
                 'gender' => $this->sanitizeInput($this->input('gender')),
                 'faculty' => $registrationData['faculty'] ?? '',
                 'department' => $registrationData['department'] ?? '',
-                'unit' => $registrationData['unit'] ?? null,
+                'unit' => $registrationData['directorate_unit'] ?? ($registrationData['unit'] ?? null),
+                'directorate' => $registrationData['directorate'] ?? null,
                 'designation' => $this->sanitizeInput($this->input('designation')),
                 'blood_group' => $this->sanitizeInput($this->input('blood_group')),
                 'office_location' => $this->sanitizeInput($this->input('office_location')),
@@ -343,7 +344,8 @@ class ProfileController extends Controller
                     'research_interests',
                     'expertise_keywords',
                     'blood_group',
-                    'unit'
+                    'unit',
+                    'directorate',
                 ];
                 foreach ($textFields as $field) {
                     if (isset($profile[$field])) {
@@ -417,18 +419,9 @@ class ProfileController extends Controller
 
         // Additional validation for non-teaching staff
         if ($staffType === 'non-teaching') {
-            $unit = $this->sanitizeInput($this->input('unit'));
-            $faculty = $this->sanitizeInput($this->input('faculty'));
-            $department = $this->sanitizeInput($this->input('department'));
-
-            // Must have either unit OR (faculty + department)
-            if (empty($unit) && empty($faculty) && empty($department)) {
-                $errors['staff_location'] = 'Please select either a Unit/Office OR Faculty/Department';
-            }
-
-            // If faculty selected, department must also be selected
-            if (!empty($faculty) && empty($department)) {
-                $errors['department'] = 'Please select a department for the selected faculty';
+            $directorate = $this->sanitizeInput($this->input('directorate'));
+            if (empty($directorate)) {
+                $errors['staff_location'] = 'Please select a Directorate';
             }
         }
 
@@ -485,23 +478,15 @@ class ProfileController extends Controller
                 $updateData['faculty'] = $this->sanitizeInput($this->input('faculty'));
                 $updateData['department'] = $this->sanitizeInput($this->input('department'));
                 $updateData['unit'] = null;
+                $updateData['directorate'] = null;
             } else {
-                // Non-teaching staff
-                $unit = $this->sanitizeInput($this->input('unit'));
-                $faculty = $this->sanitizeInput($this->input('faculty'));
-                $department = $this->sanitizeInput($this->input('department'));
-
-                if (!empty($unit)) {
-                    // Unit selected, clear faculty/department
-                    $updateData['unit'] = $unit;
-                    $updateData['faculty'] = null;
-                    $updateData['department'] = null;
-                } else {
-                    // Faculty/Department selected, clear unit
-                    $updateData['unit'] = null;
-                    $updateData['faculty'] = $faculty;
-                    $updateData['department'] = $department;
-                }
+                // Non-teaching staff: directorate + optional unit
+                $directorate = $this->sanitizeInput($this->input('directorate'));
+                $directorateUnit = $this->sanitizeInput($this->input('directorate_unit'));
+                $updateData['directorate'] = $directorate;
+                $updateData['unit'] = $directorateUnit ?: null;
+                $updateData['faculty'] = null;
+                $updateData['department'] = null;
             }
 
             // Handle profile photo upload

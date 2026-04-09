@@ -224,34 +224,19 @@ if (!function_exists('escape_html')) {
 
                                 <div id="non_teaching_fields" style="display: none;">
                                     <div class="alert alert-info">
-                                        <i class="fas fa-info-circle me-2"></i>Select <strong>either</strong> a Unit/Office <strong>OR</strong> Faculty/Department (not both)
+                                        <i class="fas fa-info-circle me-2"></i>Select your <strong>Directorate</strong>, then choose your <strong>Unit</strong> within it.
                                     </div>
-                                    <div class="row">
-                                        <div class="col-md-12 mb-3">
-                                            <label class="form-label">Unit/Office/Directorate</label>
-                                            <select class="form-select" id="unit" name="unit">
-                                                <option value="">Select Unit/Office (Optional)</option>
-                                                <?php foreach ($units as $unit): ?>
-                                                    <option value="<?= htmlspecialchars($unit) ?>" <?= ($profile['unit'] ?? '') === $unit ? 'selected' : '' ?>><?= htmlspecialchars($unit) ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="text-center mb-3"><strong>OR</strong></div>
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">Faculty</label>
-                                            <select class="form-select" id="faculty_nt" name="faculty_nt">
-                                                <option value="">Select Faculty (Optional)</option>
-                                                <?php foreach ($faculties as $faculty => $departments): ?>
-                                                    <option value="<?= htmlspecialchars($faculty) ?>" <?= ($profile['faculty'] ?? '') === $faculty ? 'selected' : '' ?>><?= htmlspecialchars($faculty) ?></option>
-                                                <?php endforeach; ?>
+                                            <label class="form-label">Directorate *</label>
+                                            <select class="form-select" id="directorate" name="directorate">
+                                                <option value="">Select Directorate</option>
                                             </select>
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">Department</label>
-                                            <select class="form-select" id="department_nt" name="department_nt">
-                                                <option value="">Select Department (Optional)</option>
+                                            <label class="form-label">Unit <span class="text-muted">(Optional)</span></label>
+                                            <select class="form-select" id="directorate_unit" name="directorate_unit" disabled>
+                                                <option value="">Select directorate first</option>
                                             </select>
                                         </div>
                                     </div>
@@ -292,7 +277,154 @@ if (!function_exists('escape_html')) {
         const currentStaffType = <?= json_encode($profile['staff_type'] ?? 'teaching') ?>;
         const currentFaculty = <?= json_encode($profile['faculty'] ?? '') ?>;
         const currentDepartment = <?= json_encode($profile['department'] ?? '') ?>;
+        const currentDirectorate = <?= json_encode($profile['directorate'] ?? '') ?>;
         const currentUnit = <?= json_encode($profile['unit'] ?? '') ?>;
+
+        let directoratesData = {};
+
+        async function loadDirectoratesData() {
+            try {
+                const response = await fetch('<?= url('directorates-units') ?>');
+                const data = await response.json();
+                if (data.status === 'success') {
+                    directoratesData = data.data;
+                    populateDirectoratesDropdown();
+                }
+            } catch (e) { console.error('Error loading directorates:', e); }
+        }
+
+        function populateDirectoratesDropdown() {
+            const dirSelect = document.getElementById('directorate');
+            dirSelect.innerHTML = '<option value="">Select Directorate</option>';
+            Object.keys(directoratesData).forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name; opt.textContent = name;
+                if (name === currentDirectorate) opt.selected = true;
+                dirSelect.appendChild(opt);
+            });
+            if (currentDirectorate) {
+                populateUnitsDropdown(currentDirectorate, currentUnit);
+            }
+        }
+
+        function populateUnitsDropdown(directorate, selectedUnit = '') {
+            const unitSelect = document.getElementById('directorate_unit');
+            const units = directoratesData[directorate]?.units || [];
+            if (units.length > 0) {
+                unitSelect.disabled = false;
+                unitSelect.innerHTML = '<option value="">Select your unit</option>';
+                units.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u; opt.textContent = u;
+                    if (u === selectedUnit) opt.selected = true;
+                    unitSelect.appendChild(opt);
+                });
+            } else {
+                unitSelect.disabled = true;
+                unitSelect.innerHTML = '<option value="">No units available</option>';
+            }
+        }
+
+        function populateDepartments(facultySelectId, departmentSelectId, selectedFaculty, selectedDepartment = '') {
+            const departmentSelect = document.getElementById(departmentSelectId);
+            departmentSelect.innerHTML = '<option value="">Select Department</option>';
+            const departments = facultiesData[selectedFaculty];
+            if (departments) {
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept; option.textContent = dept;
+                    if (dept === selectedDepartment) option.selected = true;
+                    departmentSelect.appendChild(option);
+                });
+            }
+        }
+
+        function toggleStaffTypeFields() {
+            const staffType = document.getElementById('staff_type').value;
+            const teachingFields = document.getElementById('teaching_fields');
+            const nonTeachingFields = document.getElementById('non_teaching_fields');
+
+            if (staffType === 'teaching') {
+                teachingFields.style.display = 'block';
+                nonTeachingFields.style.display = 'none';
+                document.getElementById('faculty_teaching').required = true;
+                document.getElementById('department_teaching').required = true;
+                document.getElementById('directorate').required = false;
+            } else {
+                teachingFields.style.display = 'none';
+                nonTeachingFields.style.display = 'block';
+                document.getElementById('faculty_teaching').required = false;
+                document.getElementById('department_teaching').required = false;
+                document.getElementById('directorate').required = false;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleStaffTypeFields();
+            loadDirectoratesData();
+
+            setTimeout(function() {
+                if (currentStaffType === 'teaching' && currentFaculty) {
+                    document.getElementById('faculty_teaching').value = currentFaculty;
+                    populateDepartments('faculty_teaching', 'department_teaching', currentFaculty, currentDepartment);
+                }
+            }, 100);
+        });
+
+        document.getElementById('staff_type').addEventListener('change', toggleStaffTypeFields);
+
+        document.getElementById('faculty_teaching').addEventListener('change', function() {
+            populateDepartments('faculty_teaching', 'department_teaching', this.value);
+        });
+
+        document.getElementById('directorate').addEventListener('change', function() {
+            populateUnitsDropdown(this.value);
+        });
+
+        document.getElementById('profileForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+
+            const formData = new FormData(this);
+            const staffType = document.getElementById('staff_type').value;
+
+            if (staffType === 'teaching') {
+                formData.set('faculty', document.getElementById('faculty_teaching').value);
+                formData.set('department', document.getElementById('department_teaching').value);
+                formData.delete('directorate');
+                formData.delete('directorate_unit');
+            } else {
+                formData.set('directorate', document.getElementById('directorate').value);
+                formData.set('directorate_unit', document.getElementById('directorate_unit').value);
+                formData.delete('faculty');
+                formData.delete('department');
+            }
+
+            fetch('<?= url('profile/update') ?>', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    const alertContainer = document.getElementById('alert-container');
+                    const type = data.success ? 'success' : 'danger';
+                    alertContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show">${data.message || data.error || 'Error occurred'}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+                    if (data.success) {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        setTimeout(() => { window.location.reload(); }, 1000);
+                    } else {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Update Profile';
+                    }
+                })
+                .catch(() => {
+                    alert('An error occurred');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Update Profile';
+                });
+        });
+    </script>
+</body>
+</html>
 
         console.log('Profile Data:', {
             staffType: currentStaffType,

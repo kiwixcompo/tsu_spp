@@ -101,8 +101,21 @@ if (!function_exists('safe_output')) {
                     <h4 class="mb-3"><?= htmlspecialchars($profile['designation'] ?? 'Staff Member') ?></h4>
                     <p class="lead mb-3">
                         <i class="fas fa-building me-2"></i>
-                        <?= htmlspecialchars($profile['department'] ?? 'N/A') ?>, 
-                        <?= htmlspecialchars($profile['faculty'] ?? 'N/A') ?>
+                        <?php if (($profile['staff_type'] ?? 'teaching') === 'non-teaching'): ?>
+                            <?php if (!empty($profile['directorate'])): ?>
+                                <?= htmlspecialchars($profile['directorate']) ?>
+                                <?php if (!empty($profile['unit'])): ?>
+                                    &mdash; <?= htmlspecialchars($profile['unit']) ?>
+                                <?php endif; ?>
+                            <?php elseif (!empty($profile['unit'])): ?>
+                                <?= htmlspecialchars($profile['unit']) ?>
+                            <?php else: ?>
+                                Non-Teaching Staff
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <?= htmlspecialchars($profile['department'] ?? 'N/A') ?>,
+                            <?= htmlspecialchars($profile['faculty'] ?? 'N/A') ?>
+                        <?php endif; ?>
                     </p>
                     <?php if (!empty($profile['office_location'])): ?>
                         <p class="mb-2">

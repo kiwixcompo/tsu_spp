@@ -288,53 +288,30 @@ SecurityHelper::setSecurityHeaders();
                             <div id="non-teaching-fields" class="field-group">
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Non-Teaching Staff:</strong> Select where you work - either a Unit/Office OR a Faculty (Department is optional)
+                                    <strong>Non-Teaching Staff:</strong> Select your Directorate, then choose your Unit within it.
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="unit" class="form-label">Unit/Office/Directorate <span class="text-muted">(Optional)</span></label>
-                                    <select class="form-select form-select-lg" 
-                                            id="unit" 
-                                            name="unit"
-                                            onchange="handleNonTeachingSelection()">
-                                        <option value="">Select if you work in a unit/office</option>
+                                    <label for="directorate" class="form-label">Directorate *</label>
+                                    <select class="form-select form-select-lg" id="directorate" name="directorate">
+                                        <option value="">Select your directorate</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="directorate_unit" class="form-label">Unit <span class="text-muted">(Optional)</span></label>
+                                    <select class="form-select form-select-lg" id="directorate_unit" name="directorate_unit" disabled>
+                                        <option value="">Select directorate first</option>
                                     </select>
                                     <div class="form-text">
-                                        <i class="fas fa-building me-1"></i>
-                                        Select if you work in a specific unit/office/directorate
-                                    </div>
-                                </div>
-
-                                <div class="text-center my-3">
-                                    <span class="badge bg-secondary">OR</span>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="faculty_nt" class="form-label">Faculty <span class="text-muted">(Optional)</span></label>
-                                        <select class="form-select form-select-lg" 
-                                                id="faculty_nt" 
-                                                name="faculty_nt"
-                                                onchange="handleNonTeachingSelection()">
-                                            <option value="">Select if you work in a faculty</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="col-md-6 mb-3">
-                                        <label for="department_nt" class="form-label">Department <span class="text-muted">(Optional)</span></label>
-                                        <select class="form-select form-select-lg" 
-                                                id="department_nt" 
-                                                name="department_nt" 
-                                                disabled
-                                                onchange="handleNonTeachingSelection()">
-                                            <option value="">Select faculty first</option>
-                                        </select>
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Some directorates have a single unit — select it if applicable.
                                     </div>
                                 </div>
 
                                 <div id="non-teaching-error" class="alert alert-danger" style="display:none;">
                                     <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Please select either a Unit/Office OR a Faculty
+                                    Please select a Directorate.
                                 </div>
                             </div>
 
@@ -404,89 +381,43 @@ SecurityHelper::setSecurityHeaders();
     <script>
         // Faculty and Department data
         let facultyDepartmentData = {};
-        
-        // Units data
-        const unitsData = [
-            'Office of the Vice Chancellor',
-            'Office of the Deputy Vice-Chancellor Admin.',
-            'Office of the Deputy Vice-Chancellor University Development Services',
-            'Office of the Deputy Vice-Chancellor Academics',
-            'Bursary Department',
-            'Tetfund Office',
-            'Office of The Registrar',
-            'Establishment Division',
-            'Open Registry',
-            'Central Admin. & Council Matters',
-            'Internal Audit Unit',
-            'Directorate of Int\'L Collaboration & Affiliation',
-            'Fire Service Unit',
-            'I.D Card Unit',
-            'ICT',
-            'Information and Publication Unit',
-            'CBT',
-            'IDELL',
-            'Security Division',
-            'Liaison Office',
-            'University Library',
-            'Centre for Entrepreneurship Training & Consultancy Services',
-            'Advancement Unit',
-            'Endowment Unit',
-            'GST Unit',
-            'Directorate of Research and Development',
-            'Directorate of Youth Development',
-            'Directorate of Career Development & Employability Services',
-            'SERVICOM',
-            'Health Services Department',
-            'Directorate of Academic Planning',
-            'Institute of Peace Studies & Conflict Management',
-            'SIWES Directorates',
-            'Students Affairs Division',
-            'Abuja Liaison Office',
-            'Academic Affairs Division',
-            'Directorate of Sandwich Programme',
-            'Directorate of Legal',
-            'College of Postgraduate Studies',
-            'School of Basic Studies',
-            'Quality Assurance',
-            'TSU Demonstration School',
-            'Physical Planning Development Unit',
-            'Works Department',
-            'Diploma Unit',
-            'Directorate of Sports',
-            'Water Factory Unit',
-            'Institute of Tree Crops and Research',
-            'Bursary Unit',
-            'Gen T.Y Danjuma College of Preliminary Studies, Takum',
-            'Entrepreneurship Training Center, Donga'
-        ];
+        // Directorate → Units data
+        let directoratesData = {};
 
-        // Load faculty data on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadFacultyData();
-            populateUnitsDropdown();
+            loadDirectoratesData();
         });
 
-        // Load faculty and department data
         async function loadFacultyData() {
             try {
                 const response = await fetch('<?= url('faculties-departments') ?>');
                 const data = await response.json();
-                
                 if (data.status === 'success') {
                     facultyDepartmentData = data.data;
                     populateFacultyDropdown();
-                    populateFacultyDropdownOptional();
                 }
             } catch (error) {
                 console.error('Error loading faculty data:', error);
             }
         }
 
-        // Populate faculty dropdown (teaching staff)
+        async function loadDirectoratesData() {
+            try {
+                const response = await fetch('<?= url('directorates-units') ?>');
+                const data = await response.json();
+                if (data.status === 'success') {
+                    directoratesData = data.data;
+                    populateDirectoratesDropdown();
+                }
+            } catch (error) {
+                console.error('Error loading directorates data:', error);
+            }
+        }
+
         function populateFacultyDropdown() {
             const facultySelect = document.getElementById('faculty');
             facultySelect.innerHTML = '<option value="">Select your faculty</option>';
-            
             Object.keys(facultyDepartmentData).forEach(faculty => {
                 const option = document.createElement('option');
                 option.value = faculty;
@@ -495,46 +426,26 @@ SecurityHelper::setSecurityHeaders();
             });
         }
 
-        // Populate faculty dropdown (non-teaching staff)
-        function populateFacultyDropdownOptional() {
-            const facultySelect = document.getElementById('faculty_nt');
-            facultySelect.innerHTML = '<option value="">Select if you work in a faculty</option>';
-            
-            Object.keys(facultyDepartmentData).forEach(faculty => {
+        function populateDirectoratesDropdown() {
+            const dirSelect = document.getElementById('directorate');
+            dirSelect.innerHTML = '<option value="">Select your directorate</option>';
+            Object.keys(directoratesData).forEach(name => {
                 const option = document.createElement('option');
-                option.value = faculty;
-                option.textContent = faculty;
-                facultySelect.appendChild(option);
+                option.value = name;
+                option.textContent = name;
+                dirSelect.appendChild(option);
             });
         }
 
-        // Populate units dropdown
-        function populateUnitsDropdown() {
-            const unitSelect = document.getElementById('unit');
-            unitSelect.innerHTML = '<option value="">Select your unit/office</option>';
-            
-            unitsData.forEach(unit => {
-                const option = document.createElement('option');
-                option.value = unit;
-                option.textContent = unit;
-                unitSelect.appendChild(option);
-            });
-        }
-
-        // Handle faculty selection change (teaching staff)
         document.getElementById('faculty').addEventListener('change', function() {
-            const selectedFaculty = this.value;
             const departmentSelect = document.getElementById('department');
-            
-            if (selectedFaculty && facultyDepartmentData[selectedFaculty]) {
+            if (this.value && facultyDepartmentData[this.value]) {
                 departmentSelect.disabled = false;
                 departmentSelect.innerHTML = '<option value="">Select your department</option>';
-                
-                facultyDepartmentData[selectedFaculty].forEach(department => {
-                    const option = document.createElement('option');
-                    option.value = department;
-                    option.textContent = department;
-                    departmentSelect.appendChild(option);
+                facultyDepartmentData[this.value].forEach(dept => {
+                    const opt = document.createElement('option');
+                    opt.value = dept; opt.textContent = dept;
+                    departmentSelect.appendChild(opt);
                 });
             } else {
                 departmentSelect.disabled = true;
@@ -542,96 +453,52 @@ SecurityHelper::setSecurityHeaders();
             }
         });
 
-        // Handle faculty selection change (non-teaching staff)
-        document.getElementById('faculty_nt').addEventListener('change', function() {
-            const selectedFaculty = this.value;
-            const departmentSelect = document.getElementById('department_nt');
-            
-            if (selectedFaculty && facultyDepartmentData[selectedFaculty]) {
-                departmentSelect.disabled = false;
-                departmentSelect.innerHTML = '<option value="">Select your department</option>';
-                
-                facultyDepartmentData[selectedFaculty].forEach(department => {
-                    const option = document.createElement('option');
-                    option.value = department;
-                    option.textContent = department;
-                    departmentSelect.appendChild(option);
+        document.getElementById('directorate').addEventListener('change', function() {
+            const unitSelect = document.getElementById('directorate_unit');
+            const units = directoratesData[this.value]?.units || [];
+            if (this.value && units.length > 0) {
+                unitSelect.disabled = false;
+                unitSelect.innerHTML = '<option value="">Select your unit</option>';
+                units.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u; opt.textContent = u;
+                    unitSelect.appendChild(opt);
                 });
             } else {
-                departmentSelect.disabled = true;
-                departmentSelect.value = '';
-                departmentSelect.innerHTML = '<option value="">Select faculty first</option>';
+                unitSelect.disabled = true;
+                unitSelect.innerHTML = '<option value="">No units available</option>';
             }
-            
-            handleNonTeachingSelection();
         });
 
-        // Handle non-teaching staff selection validation
-        function handleNonTeachingSelection() {
-            const unit = document.getElementById('unit').value;
-            const faculty = document.getElementById('faculty_nt').value;
-            const department = document.getElementById('department_nt').value;
-            const errorDiv = document.getElementById('non-teaching-error');
-            
-            // Hide error by default
-            errorDiv.style.display = 'none';
-            
-            // If unit is selected, clear faculty/department
-            if (unit) {
-                document.getElementById('faculty_nt').value = '';
-                document.getElementById('department_nt').value = '';
-                document.getElementById('department_nt').disabled = true;
-            }
-            
-            // If faculty is selected, clear unit
-            if (faculty) {
-                document.getElementById('unit').value = '';
-            }
-        }
-
-        // Staff type selection
         function selectStaffType(type) {
-            // Update radio button
             if (type === 'teaching') {
                 document.getElementById('staff_type_teaching').checked = true;
             } else {
                 document.getElementById('staff_type_non_teaching').checked = true;
             }
-            
-            // Update card styling
-            document.querySelectorAll('.staff-type-card').forEach(card => {
-                card.classList.remove('selected');
-            });
+            document.querySelectorAll('.staff-type-card').forEach(card => card.classList.remove('selected'));
             event.currentTarget.classList.add('selected');
-            
-            // Show/hide appropriate fields
+
             const teachingFields = document.getElementById('teaching-fields');
             const nonTeachingFields = document.getElementById('non-teaching-fields');
-            
             if (type === 'teaching') {
                 teachingFields.classList.add('active');
                 nonTeachingFields.classList.remove('active');
-                
-                // Make teaching fields required
                 document.getElementById('faculty').required = true;
                 document.getElementById('department').required = true;
-                document.getElementById('unit').required = false;
+                document.getElementById('directorate').required = false;
             } else {
                 teachingFields.classList.remove('active');
                 nonTeachingFields.classList.add('active');
-                
-                // Make non-teaching fields optional (will validate manually)
                 document.getElementById('faculty').required = false;
                 document.getElementById('department').required = false;
-                document.getElementById('unit').required = false;
+                document.getElementById('directorate').required = false;
             }
         }
 
-        // Update visibility text
         function updateVisibilityText() {
             const checkbox = document.getElementById('profile_visibility');
             const text = document.getElementById('visibility-text');
-            
             if (checkbox.checked) {
                 text.innerHTML = '<i class="fas fa-eye me-1"></i>Your profile will be visible in the staff directory';
                 checkbox.value = 'public';
@@ -641,171 +508,90 @@ SecurityHelper::setSecurityHeaders();
             }
         }
 
-        // Password toggle
         document.getElementById('togglePassword').addEventListener('click', function() {
             const password = document.getElementById('password');
             const icon = this.querySelector('i');
-            
-            if (password.type === 'password') {
-                password.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                password.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
+            password.type = password.type === 'password' ? 'text' : 'password';
+            icon.classList.toggle('fa-eye'); icon.classList.toggle('fa-eye-slash');
         });
 
         document.getElementById('toggleConfirmPassword').addEventListener('click', function() {
             const password = document.getElementById('confirm_password');
             const icon = this.querySelector('i');
-            
-            if (password.type === 'password') {
-                password.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                password.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
+            password.type = password.type === 'password' ? 'text' : 'password';
+            icon.classList.toggle('fa-eye'); icon.classList.toggle('fa-eye-slash');
         });
 
-        // Form validation and submission
         document.getElementById('registerForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevent default form submission
-            
+            e.preventDefault();
+
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirm_password').value;
-            
             if (password !== confirmPassword) {
                 alert('Passwords do not match!');
-                return false;
+                return;
             }
-            
-            // Validate staff type specific fields
+
             const staffType = document.querySelector('input[name="staff_type"]:checked').value;
-            
             if (staffType === 'teaching') {
-                const faculty = document.getElementById('faculty').value;
-                const department = document.getElementById('department').value;
-                
-                if (!faculty || !department) {
+                if (!document.getElementById('faculty').value || !document.getElementById('department').value) {
                     alert('Please select both faculty and department for teaching staff.');
-                    return false;
+                    return;
                 }
             } else {
-                // Non-teaching staff must select EITHER unit OR faculty (department is optional)
-                const unit = document.getElementById('unit').value;
-                const faculty = document.getElementById('faculty_nt').value;
-                
-                // Check if neither option is selected
-                if (!unit && !faculty) {
+                if (!document.getElementById('directorate').value) {
                     document.getElementById('non-teaching-error').style.display = 'block';
-                    alert('Non-teaching staff must select either a Unit/Office OR a Faculty.');
-                    return false;
+                    alert('Please select a Directorate.');
+                    return;
                 }
-                
-                // If faculty is selected, department must also be selected
-                if (faculty && !department) {
-                    alert('Please select a department for the selected faculty.');
-                    return false;
-                }
+                document.getElementById('non-teaching-error').style.display = 'none';
             }
-            
-            // All validations passed, submit via AJAX
+
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalBtnText = submitBtn.innerHTML;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
-            
+
             const formData = new FormData(this);
-            
-            fetch('<?= url('register') ?>', {
-                method: 'POST',
-                body: formData
-            })
+
+            fetch('<?= url('register') ?>', { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Show success message
                     const alertDiv = document.createElement('div');
                     alertDiv.className = 'alert alert-success alert-dismissible fade show';
-                    alertDiv.innerHTML = `
-                        <i class="fas fa-check-circle me-2"></i>
-                        <strong>Success!</strong> ${data.message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    
-                    // Insert alert at top of form
-                    const form = document.getElementById('registerForm');
-                    form.insertBefore(alertDiv, form.firstChild);
-                    
-                    // Scroll to top
+                    alertDiv.innerHTML = `<i class="fas fa-check-circle me-2"></i><strong>Success!</strong> ${data.message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+                    this.insertBefore(alertDiv, this.firstChild);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
-                    
-                    // Redirect after 2 seconds
-                    setTimeout(() => {
-                        window.location.href = data.redirect;
-                    }, 2000);
+                    setTimeout(() => { window.location.href = data.redirect; }, 2000);
                 } else if (data.errors) {
-                    // Show validation errors
                     let errorMessage = '<ul class="mb-0">';
-                    for (const [field, message] of Object.entries(data.errors)) {
+                    for (const [, message] of Object.entries(data.errors)) {
                         errorMessage += `<li>${message}</li>`;
                     }
                     errorMessage += '</ul>';
-                    
                     const alertDiv = document.createElement('div');
                     alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-                    alertDiv.innerHTML = `
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Validation Error:</strong>
-                        ${errorMessage}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    
-                    const form = document.getElementById('registerForm');
-                    form.insertBefore(alertDiv, form.firstChild);
+                    alertDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i><strong>Validation Error:</strong>${errorMessage}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+                    this.insertBefore(alertDiv, this.firstChild);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
-                    
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false; submitBtn.innerHTML = originalBtnText;
                 } else {
-                    // Show generic error
                     const alertDiv = document.createElement('div');
                     alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-                    alertDiv.innerHTML = `
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        <strong>Error:</strong> ${data.error || 'Registration failed. Please try again.'}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    
-                    const form = document.getElementById('registerForm');
-                    form.insertBefore(alertDiv, form.firstChild);
+                    alertDiv.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i><strong>Error:</strong> ${data.error || 'Registration failed. Please try again.'}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+                    this.insertBefore(alertDiv, this.firstChild);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
-                    
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false; submitBtn.innerHTML = originalBtnText;
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
+            .catch(() => {
                 const alertDiv = document.createElement('div');
                 alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-                alertDiv.innerHTML = `
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    <strong>Error:</strong> An unexpected error occurred. Please try again.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                
-                const form = document.getElementById('registerForm');
-                form.insertBefore(alertDiv, form.firstChild);
+                alertDiv.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i><strong>Error:</strong> An unexpected error occurred. Please try again.<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+                this.insertBefore(alertDiv, this.firstChild);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false; submitBtn.innerHTML = originalBtnText;
             });
         });
     </script>

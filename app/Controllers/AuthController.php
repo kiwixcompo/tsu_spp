@@ -93,18 +93,16 @@ class AuthController extends Controller
                 $errors['department'] = 'Department is required for teaching staff';
             }
         } else {
-            // Non-teaching staff: either unit OR faculty (with optional department) required
-            $unit = $this->sanitizeInput($this->input('unit'));
-            $faculty = $this->sanitizeInput($this->input('faculty_nt'));
-            $department = $this->sanitizeInput($this->input('department_nt'));
-            
-            // Check if at least one option is selected (unit OR faculty)
-            if (empty($unit) && empty($faculty)) {
-                $errors['staff_location'] = 'Please select either a Unit/Office OR Faculty';
+            // Non-teaching staff: directorate is required, unit is optional
+            $directorate = $this->sanitizeInput($this->input('directorate'));
+            $directorateUnit = $this->sanitizeInput($this->input('directorate_unit'));
+            $faculty = null;
+            $department = null;
+            $unit = $directorateUnit ?: $directorate; // store unit or fall back to directorate name
+
+            if (empty($directorate)) {
+                $errors['staff_location'] = 'Please select a Directorate';
             }
-            
-            // Note: Department is optional for non-teaching staff at faculty level
-            // They can work at faculty level without being assigned to a specific department
         }
 
         $email = $emailPrefix . '@tsuniversity.edu.ng';
@@ -165,6 +163,8 @@ class AuthController extends Controller
                 'faculty' => $faculty ?? null,
                 'department' => $department ?? null,
                 'unit' => $unit ?? null,
+                'directorate' => ($staffType === 'non-teaching') ? ($this->sanitizeInput($this->input('directorate')) ?: null) : null,
+                'directorate_unit' => ($staffType === 'non-teaching') ? ($this->sanitizeInput($this->input('directorate_unit')) ?: null) : null,
                 'staff_number' => $staffPrefix . $staffNumber,
                 'profile_visibility' => $profileVisibility,
             ];
