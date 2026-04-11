@@ -16,21 +16,25 @@ if (!function_exists('url')) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body { overflow-x: hidden; }
-        .admin-sidebar { background: #2c3e50; min-height: 100vh; padding-top: 2rem; position: fixed; left: 0; top: 0; width: 250px; transition: all 0.3s ease; z-index: 1000; overflow-y: auto; }
-        .admin-sidebar.collapsed { width: 70px; }
+        .admin-sidebar { background: #2c3e50; min-height: 100vh; padding-top: 2rem; position: fixed; left: 0; top: 0; width: 220px; transition: all 0.3s ease; z-index: 1000; overflow-y: auto; }
+        .admin-sidebar.collapsed { width: 60px; }
         .admin-sidebar.collapsed .sidebar-text { display: none; }
-        .admin-sidebar.collapsed .text-center h4 { font-size: 0; }
-        .admin-sidebar.collapsed .text-center h4 i { font-size: 1.5rem; }
-        .admin-sidebar .nav-link { color: #ecf0f1; padding: 1rem 1.5rem; border-radius: 0; margin-bottom: 0.5rem; white-space: nowrap; transition: all 0.3s ease; }
-        .admin-sidebar.collapsed .nav-link { padding: 1rem 0.5rem; text-align: center; }
+        .admin-sidebar.collapsed .text-center h4 .sidebar-text { display: none; }
+        .admin-sidebar .nav-link { color: #ecf0f1; padding: 0.75rem 1.25rem; border-radius: 0; margin-bottom: 0.25rem; white-space: nowrap; transition: all 0.3s ease; font-size: 0.875rem; }
+        .admin-sidebar.collapsed .nav-link { padding: 0.75rem 0; text-align: center; }
         .admin-sidebar .nav-link:hover, .admin-sidebar .nav-link.active { background: #34495e; color: white; }
-        .sidebar-toggle { position: absolute; top: 10px; right: -15px; background: #2c3e50; color: white; border: 2px solid #34495e; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1001; transition: all 0.3s ease; }
+        .sidebar-toggle { position: absolute; top: 12px; right: -14px; background: #2c3e50; color: white; border: 2px solid #34495e; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1001; transition: all 0.3s ease; font-size: 12px; }
         .sidebar-toggle:hover { background: #34495e; }
-        .main-content { margin-left: 250px; transition: all 0.3s ease; width: calc(100% - 250px); }
-        .main-content.expanded { margin-left: 70px; width: calc(100% - 70px); }
+        .main-content { margin-left: 220px; transition: all 0.3s ease; width: calc(100% - 220px); min-width: 0; }
+        .main-content.expanded { margin-left: 60px; width: calc(100% - 60px); }
+        /* Compact table */
+        .table th, .table td { font-size: 0.78rem; padding: 0.4rem 0.5rem; vertical-align: middle; white-space: nowrap; }
+        .table th { font-size: 0.75rem; }
+        .btn-group-sm .btn { padding: 0.2rem 0.4rem; font-size: 0.75rem; }
+        .badge { font-size: 0.7rem; }
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .preview-modal-dialog { max-width: 900px; }
-        @media (max-width: 768px) { .admin-sidebar { width: 70px; } .admin-sidebar .sidebar-text { display: none; } .main-content { margin-left: 70px; width: calc(100% - 70px); } }
+        @media (max-width: 768px) { .admin-sidebar { width: 60px; } .admin-sidebar .sidebar-text { display: none; } .main-content { margin-left: 60px; width: calc(100% - 60px); } }
     </style>
 </head>
 <body class="bg-light">
@@ -225,378 +229,315 @@ if (!function_exists('url')) {
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    
     <script>
         const csrfToken = '<?= $_SESSION['csrf_token'] ?? '' ?>';
         let searchTimeout = null;
         let currentPage = 1;
 
-        // Sidebar Toggle
+        // ── Sidebar ──────────────────────────────────────────────────────────
         function toggleSidebar() {
-            document.getElementById('adminSidebar').classList.toggle('collapsed');
-            document.getElementById('mainContent').classList.toggle('expanded');
+            const sidebar = document.getElementById('adminSidebar');
+            const content = document.getElementById('mainContent');
+            const icon    = document.getElementById('toggleIcon');
+            sidebar.classList.toggle('collapsed');
+            content.classList.toggle('expanded');
+            icon.classList.toggle('fa-chevron-left');
+            icon.classList.toggle('fa-chevron-right');
         }
 
-        // Debounced search function
+        // ── Search / Filters ─────────────────────────────────────────────────
         document.getElementById('userSearch').addEventListener('input', function() {
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                currentPage = 1;
-                performSearch();
-            }, 500);
+            searchTimeout = setTimeout(() => { currentPage = 1; performSearch(); }, 400);
         });
 
-        // Perform AJAX search with filters
+        // All filter selects auto-trigger search on change (already have onchange in HTML)
         function performSearch(page = 1) {
             currentPage = page;
-            const query = document.getElementById('userSearch').value;
-            const staffType = document.getElementById('staffTypeFilter').value;
-            const gender = document.getElementById('genderFilter').value;
-            const faculty = document.getElementById('facultyFilter').value;
-            const unit = document.getElementById('unitFilter').value;
-            const idCardFilter = document.getElementById('idCardFilter').value;
-            const noPhoto = document.getElementById('noPhotoFilter').value;
-
             const params = new URLSearchParams({
-                query, staff_type: staffType, gender, faculty, unit,
-                id_card_filter: idCardFilter, no_photo: noPhoto, page
+                query:          document.getElementById('userSearch').value,
+                staff_type:     document.getElementById('staffTypeFilter').value,
+                gender:         document.getElementById('genderFilter').value,
+                faculty:        document.getElementById('facultyFilter').value,
+                unit:           document.getElementById('unitFilter').value,
+                id_card_filter: document.getElementById('idCardFilter').value,
+                no_photo:       document.getElementById('noPhotoFilter').value,
+                page
             });
 
             fetch('<?= url('/admin/users/search') ?>', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRF-Token': csrfToken
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrfToken },
                 body: params
             })
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
                     updateUserTable(data.users);
                     updatePagination(data.pagination);
                     document.getElementById('visibleCount').textContent = data.users.length;
-                    document.getElementById('totalCount').textContent = data.pagination.total_users;
-                } else {
-                    alert('Search failed: ' + (data.error || 'Unknown error'));
+                    document.getElementById('totalCount').textContent   = data.pagination.total_users;
                 }
             })
-            .catch(error => {
-                console.error('Search error:', error);
-                alert('Search failed. Please try again.');
-            });
+            .catch(err => console.error('Search error:', err));
         }
 
         function updateUserTable(users) {
             const tbody = document.getElementById('usersTableBody');
-            
-            if (users.length === 0) {
+            if (!users.length) {
                 tbody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-muted">No users found</td></tr>';
                 return;
             }
-
-            let html = '';
-            users.forEach(user => {
-                const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
-                const staffNumber = user.staff_number || '-';
-                const email = user.email || '';
-                
-                let facultyUnit = '-';
-                if (user.unit) {
-                    facultyUnit = `<span class="badge bg-info">${escapeHtml(user.unit)}</span>`;
-                } else if (user.faculty) {
-                    facultyUnit = escapeHtml(user.faculty);
-                }
-
+            tbody.innerHTML = users.map(user => {
+                const fullName    = escapeHtml(`${user.first_name || ''} ${user.last_name || ''}`.trim());
+                const staffNumber = escapeHtml(user.staff_number || '-');
+                const email       = escapeHtml(user.email || '');
+                const facultyUnit = user.unit
+                    ? `<span class="badge bg-info">${escapeHtml(user.unit)}</span>`
+                    : (user.faculty ? escapeHtml(user.faculty) : '-');
                 const statusClass = user.account_status === 'active' ? 'success' : (user.account_status === 'pending' ? 'warning' : 'danger');
-                const statusText = user.account_status ? user.account_status.charAt(0).toUpperCase() + user.account_status.slice(1) : 'Unknown';
-                const idCardBadge = parseInt(user.id_card_generated) === 1
+                const statusText  = (user.account_status || 'unknown').charAt(0).toUpperCase() + (user.account_status || '').slice(1);
+                const idBadge     = parseInt(user.id_card_generated) === 1
                     ? `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Printed</span>`
                     : `<span class="badge bg-secondary">Not Printed</span>`;
-                const isAdmin = user.role === 'admin';
-
-                html += `
-                    <tr class="user-row">
-                        <td>${!isAdmin ? `<input type="checkbox" class="user-checkbox" value="${user.id}" onchange="updateBulkButtons()">` : ''}</td>
-                        <td>${escapeHtml(fullName)}</td>
-                        <td class="fw-bold text-primary">${escapeHtml(staffNumber)}</td>
-                        <td>${escapeHtml(email)}</td>
-                        <td>${facultyUnit}</td>
-                        <td><span class="badge bg-${statusClass}">${statusText}</span></td>
-                        <td>${idCardBadge}</td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary" onclick="generateIDCard(${user.id})" title="Generate ID"><i class="fas fa-id-card"></i></button>
-                                <button class="btn btn-outline-success" onclick="activateUser(${user.id})" title="Activate"><i class="fas fa-check"></i></button>
-                                <button class="btn btn-outline-danger" onclick="deleteUser(${user.id})" title="Delete"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            tbody.innerHTML = html;
+                const checkbox    = user.role !== 'admin'
+                    ? `<input type="checkbox" class="user-checkbox" value="${user.id}" onchange="updateBulkButtons()">`
+                    : '';
+                return `
+                <tr class="user-row">
+                    <td>${checkbox}</td>
+                    <td>${fullName}</td>
+                    <td class="fw-bold text-primary">${staffNumber}</td>
+                    <td>${email}</td>
+                    <td>${facultyUnit}</td>
+                    <td><span class="badge bg-${statusClass}">${statusText}</span></td>
+                    <td>${idBadge}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="generateIDCard(${user.id})" title="ID Card"><i class="fas fa-id-card"></i></button>
+                            <button class="btn btn-outline-success" onclick="activateUser(${user.id})" title="Activate"><i class="fas fa-check"></i></button>
+                            <button class="btn btn-outline-danger"  onclick="deleteUser(${user.id})"   title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
             updateBulkButtons();
         }
 
-        // Update pagination
         function updatePagination(pagination) {
             const { current_page, total_pages } = pagination;
-            
-            if (total_pages <= 1) {
-                document.getElementById('paginationTop').innerHTML = '';
-                document.getElementById('paginationBottom').innerHTML = '';
-                return;
-            }
-
-            const paginationHTML = generatePaginationHTML(current_page, total_pages);
-            document.getElementById('paginationTop').innerHTML = paginationHTML;
-            document.getElementById('paginationBottom').innerHTML = paginationHTML;
+            const html = total_pages > 1 ? generatePaginationHTML(current_page, total_pages) : '';
+            document.getElementById('paginationTop').innerHTML    = html;
+            document.getElementById('paginationBottom').innerHTML = html;
         }
 
-        // Generate pagination HTML
-        function generatePaginationHTML(currentPage, totalPages) {
-            let html = '<ul class="pagination justify-content-center">';
-            
-            // Previous button
-            html += `<li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="performSearch(${currentPage - 1}); return false;">Previous</a>
-            </li>`;
-
-            // Page numbers
-            const start = Math.max(1, currentPage - 2);
-            const end = Math.min(totalPages, currentPage + 2);
-
-            if (start > 1) {
-                html += `<li class="page-item"><a class="page-link" href="#" onclick="performSearch(1); return false;">1</a></li>`;
-                if (start > 2) {
-                    html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                }
-            }
-
-            for (let i = start; i <= end; i++) {
-                html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" onclick="performSearch(${i}); return false;">${i}</a>
-                </li>`;
-            }
-
-            if (end < totalPages) {
-                if (end < totalPages - 1) {
-                    html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                }
-                html += `<li class="page-item"><a class="page-link" href="#" onclick="performSearch(${totalPages}); return false;">${totalPages}</a></li>`;
-            }
-
-            // Next button
-            html += `<li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="performSearch(${currentPage + 1}); return false;">Next</a>
-            </li>`;
-
-            html += '</ul>';
-            return html;
+        function generatePaginationHTML(cur, total) {
+            const prev = cur <= 1 ? 'disabled' : '';
+            const next = cur >= total ? 'disabled' : '';
+            let pages = '';
+            const start = Math.max(1, cur - 2), end = Math.min(total, cur + 2);
+            if (start > 1) { pages += `<li class="page-item"><a class="page-link" href="#" onclick="performSearch(1);return false;">1</a></li>`; if (start > 2) pages += '<li class="page-item disabled"><span class="page-link">…</span></li>'; }
+            for (let i = start; i <= end; i++) pages += `<li class="page-item ${i===cur?'active':''}"><a class="page-link" href="#" onclick="performSearch(${i});return false;">${i}</a></li>`;
+            if (end < total) { if (end < total-1) pages += '<li class="page-item disabled"><span class="page-link">…</span></li>'; pages += `<li class="page-item"><a class="page-link" href="#" onclick="performSearch(${total});return false;">${total}</a></li>`; }
+            return `<ul class="pagination justify-content-center mb-0">
+                <li class="page-item ${prev}"><a class="page-link" href="#" onclick="performSearch(${cur-1});return false;">Prev</a></li>
+                ${pages}
+                <li class="page-item ${next}"><a class="page-link" href="#" onclick="performSearch(${cur+1});return false;">Next</a></li>
+            </ul>`;
         }
 
-        // Export to Excel
-        function exportToExcel() {
-            const staffType = document.getElementById('staffTypeFilter').value;
-            const gender = document.getElementById('genderFilter').value;
-            const faculty = document.getElementById('facultyFilter').value;
-            const unit = document.getElementById('unitFilter').value;
-
-            const params = new URLSearchParams({
-                staff_type: staffType,
-                gender: gender,
-                faculty: faculty,
-                unit: unit
-            });
-
-            window.location.href = '<?= url('/admin/users/export') ?>?' + params.toString();
-        }
-
-        // Helper function to escape HTML
         function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+            const d = document.createElement('div');
+            d.textContent = String(text ?? '');
+            return d.innerHTML;
         }
 
-        // Load faculties and units for filters
+        function exportToExcel() {
+            const params = new URLSearchParams({
+                staff_type: document.getElementById('staffTypeFilter').value,
+                gender:     document.getElementById('genderFilter').value,
+                faculty:    document.getElementById('facultyFilter').value,
+                unit:       document.getElementById('unitFilter').value
+            });
+            window.location.href = '<?= url('/admin/users/export') ?>?' + params;
+        }
+
+        // Load filter dropdowns from API
         function loadFilterOptions() {
             fetch('<?= url('/faculties-departments') ?>')
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
-                    const facultySelect = document.getElementById('facultyFilter');
-                    const faculties = new Set();
-                    
-                    data.forEach(item => {
-                        if (item.faculty) faculties.add(item.faculty);
-                    });
-
-                    faculties.forEach(faculty => {
-                        const option = document.createElement('option');
-                        option.value = faculty;
-                        option.textContent = faculty;
-                        facultySelect.appendChild(option);
+                    const sel = document.getElementById('facultyFilter');
+                    Object.keys(data.data || data).forEach(f => {
+                        const o = document.createElement('option');
+                        o.value = o.textContent = f;
+                        sel.appendChild(o);
                     });
                 })
-                .catch(error => console.error('Error loading faculties:', error));
-
-            // Load units
-            fetch('<?= url('/faculties-departments') ?>')
-                .then(response => response.json())
-                .then(data => {
-                    const unitSelect = document.getElementById('unitFilter');
-                    
-                    // Get unique units from profiles
-                    fetch('<?= url('/admin/users/search') ?>', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRF-Token': csrfToken
-                        },
-                        body: 'query='
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const units = new Set();
-                            data.users.forEach(user => {
-                                if (user.unit) units.add(user.unit);
-                            });
-
-                            units.forEach(unit => {
-                                const option = document.createElement('option');
-                                option.value = unit;
-                                option.textContent = unit;
-                                unitSelect.appendChild(option);
-                            });
-                        }
-                    });
-                })
-                .catch(error => console.error('Error loading units:', error));
+                .catch(() => {});
         }
 
-        // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadFilterOptions();
-            updatePagination({
-                current_page: <?= $current_page ?? 1 ?>,
-                total_pages: <?= $total_pages ?? 1 ?>
-            });
+            updatePagination({ current_page: <?= $current_page ?? 1 ?>, total_pages: <?= $total_pages ?? 1 ?> });
         });
 
-        // Checkbox Logic
+        // ── Checkboxes ───────────────────────────────────────────────────────
         function toggleSelectAll() {
-            const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('.user-checkbox');
-            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            const checked = document.getElementById('selectAll').checked;
+            document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = checked);
             updateBulkButtons();
         }
 
         function updateBulkButtons() {
             const count = document.querySelectorAll('.user-checkbox:checked').length;
             document.getElementById('selectedCount').textContent = count;
-            
-            const ids = ['bulkIDCardBtn', 'bulkVerifyBtn', 'bulkActivateBtn', 'bulkSuspendBtn', 'bulkDeleteBtn', 'bulkPhotoReminderBtn'];
-            ids.forEach(id => {
-                const btn = document.getElementById(id);
-                if(btn) btn.disabled = count === 0;
-            });
+            ['bulkIDCardBtn','bulkVerifyBtn','bulkActivateBtn','bulkSuspendBtn','bulkDeleteBtn','bulkPhotoReminderBtn']
+                .forEach(id => { const b = document.getElementById(id); if (b) b.disabled = count === 0; });
         }
 
         function getSelectedUserIds() {
             return Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.value);
         }
 
-        // --- CORE ACTION FUNCTIONS ---
-
+        // ── Core action helper ───────────────────────────────────────────────
         async function performAction(url, payload, confirmMsg) {
             if (confirmMsg && !confirm(confirmMsg)) return;
-
             try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                    body: JSON.stringify(payload)
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert(data.message || 'Success');
-                    location.reload();
-                } else {
-                    alert('Error: ' + (data.error || 'Action failed'));
-                }
-            } catch (e) {
-                console.error(e);
-                alert('Network request failed');
-            }
+                const r    = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify(payload) });
+                const data = await r.json();
+                if (data.success) { alert(data.message || 'Success'); location.reload(); }
+                else              { alert('Error: ' + (data.error || 'Action failed')); }
+            } catch (e) { alert('Network request failed'); }
         }
 
-        // --- BULK ACTIONS ---
-
-        function bulkDelete() {
+        // ── Bulk actions ─────────────────────────────────────────────────────
+        function bulkDelete()    { const ids = getSelectedUserIds(); if (ids.length) performAction('<?= url('admin/bulk-delete-users') ?>', { user_ids: ids }, 'Delete selected users? Cannot be undone.'); }
+        function bulkVerify()    { const ids = getSelectedUserIds(); if (ids.length) performAction('<?= url('admin/bulk-verify-users') ?>',  { user_ids: ids }, 'Verify selected users?'); }
+        function bulkActivate()  { const ids = getSelectedUserIds(); if (ids.length) performAction('<?= url('admin/bulk-activate-users') ?>', { user_ids: ids }, 'Activate selected users?'); }
+        function bulkSuspend()   {
             const ids = getSelectedUserIds();
-            if(ids.length) performAction('<?= url('admin/bulk-delete-users') ?>', { user_ids: ids }, 'Delete selected users? Cannot be undone.');
+            if (!ids.length) return;
+            const reason = prompt('Enter suspension reason:', 'Policy Violation');
+            if (reason) performAction('<?= url('admin/bulk-suspend-users') ?>', { user_ids: ids, reason }, null);
         }
-
         function bulkSendPhotoReminder() {
             const ids = getSelectedUserIds();
             if (!ids.length) return;
-            if (!confirm(`Send photo update reminder email to ${ids.length} selected user(s)?`)) return;
-
+            if (!confirm(`Send photo reminder to ${ids.length} user(s)?`)) return;
             fetch('<?= url('admin/users/send-photo-reminder') ?>', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                 body: JSON.stringify({ user_ids: ids })
-            })
-            .then(r => r.json())
-            .then(data => {
+            }).then(r => r.json()).then(d => alert(d.success ? d.message : 'Error: ' + d.error)).catch(() => alert('Network error.'));
+        }
+
+        // ── Single actions ───────────────────────────────────────────────────
+        function deleteUser(id)    { performAction('<?= url('admin/delete-user') ?>',   { user_id: id }, 'Delete this user?'); }
+        function activateUser(id)  { performAction('<?= url('admin/activate-user') ?>', { user_id: id }, 'Activate this user?'); }
+        function generateIDCard(id){ window.open('<?= url('admin/id-cards/preview') ?>/' + id, '_blank'); }
+
+        // ── Bulk ID card generation ──────────────────────────────────────────
+        async function bulkGenerateIDCards() {
+            const userIds = getSelectedUserIds();
+            const btn = document.getElementById('bulkIDCardBtn');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+            try {
+                const r    = await fetch('<?= url('admin/id-cards/bulk-generate') ?>', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify({ user_ids: userIds }) });
+                const data = await r.json();
                 if (data.success) {
-                    alert(data.message);
-                } else {
-                    alert('Error: ' + (data.error || 'Failed to send reminders'));
-                }
-            })
-            .catch(() => alert('Network error. Please try again.'));
-        }
-        }
-
-        function bulkVerify() {
-            const ids = getSelectedUserIds();
-            if(ids.length) performAction('<?= url('admin/bulk-verify-users') ?>', { user_ids: ids }, 'Verify selected users?');
+                    window.generatedProfiles = data.profiles;
+                    document.getElementById('previewContainer').innerHTML = data.profiles.map(buildCardHtml).join('');
+                    new bootstrap.Modal(document.getElementById('previewModal')).show();
+                } else { alert('Error: ' + data.error); }
+            } catch (e) { alert('Request failed'); }
+            finally { btn.innerHTML = orig; btn.disabled = false; }
         }
 
-        function bulkActivate() {
-            const ids = getSelectedUserIds();
-            if(ids.length) performAction('<?= url('admin/bulk-activate-users') ?>', { user_ids: ids }, 'Activate selected users?');
+        function buildCardHtml(profile) {
+            const staffId  = profile.staff_number || ('TSU-' + String(profile.id).padStart(5,'0'));
+            const fullName = [profile.title, profile.first_name, profile.last_name].filter(Boolean).join(' ');
+            const photoUrl = profile.profile_photo_url || '';
+            const qrUrl    = profile.qr_code_url || '';
+            const logoUrl  = '<?= asset('assets/images/tsu-logo.png') ?>';
+            const bgUrl    = '<?= asset('assets/images/tsu-building.jpg') ?>';
+            const dirLabel = (profile.directorate || '').replace(/^(Directorate of |Faculty of )/i, '');
+            const isNT     = profile.staff_type === 'non-teaching';
+            const detailRows = isNT
+                ? `${dirLabel ? `<tr><td style="font-weight:700;color:#1e40af;width:55px;vertical-align:top;padding-bottom:5px;white-space:nowrap;">Directorate:</td><td style="color:#111;font-weight:600;vertical-align:top;">${escapeHtml(dirLabel)}</td></tr>` : ''}
+                   ${profile.unit ? `<tr><td style="font-weight:700;color:#1e40af;width:55px;vertical-align:top;padding-bottom:5px;white-space:nowrap;">Unit:</td><td style="color:#111;font-weight:600;vertical-align:top;">${escapeHtml(profile.unit)}</td></tr>` : ''}`
+                : `${profile.faculty ? `<tr><td style="font-weight:700;color:#1e40af;width:55px;vertical-align:top;padding-bottom:5px;white-space:nowrap;">Faculty:</td><td style="color:#111;font-weight:600;vertical-align:top;">${escapeHtml(profile.faculty)}</td></tr>` : ''}
+                   ${profile.department ? `<tr><td style="font-weight:700;color:#1e40af;width:55px;vertical-align:top;padding-bottom:5px;white-space:nowrap;">Dept:</td><td style="color:#111;font-weight:600;vertical-align:top;">${escapeHtml(profile.department)}</td></tr>` : ''}`;
+            return `
+            <div class="id-card-wrapper" style="margin:10px;">
+                <div class="id-card" style="width:350px;height:550px;background:#fff;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.1);overflow:hidden;position:relative;margin-bottom:10px;">
+                    <div style="height:100%;position:relative;background:#f8f9fa;">
+                        <div style="position:absolute;top:0;left:0;width:100%;height:100%;background-image:url('${bgUrl}');background-size:cover;background-position:center;opacity:.15;z-index:0;"></div>
+                        <div style="position:absolute;left:20px;bottom:40px;height:180px;width:40px;background:#1e40af;color:white;display:flex;align-items:center;justify-content:center;border-radius:8px 8px 0 0;z-index:3;">
+                            <div style="transform:rotate(-90deg);white-space:nowrap;font-weight:800;letter-spacing:2px;text-transform:uppercase;font-size:13px;">STAFF ID CARD</div>
+                        </div>
+                        <div style="text-align:center;padding-top:20px;position:relative;z-index:2;">
+                            <img src="${logoUrl}" style="width:65px;height:65px;margin-bottom:3px;">
+                            <h2 style="color:#1e40af;font-weight:800;font-size:15px;text-transform:uppercase;margin:0;line-height:1.1;">TARABA STATE UNIVERSITY</h2>
+                            <div style="display:inline-block;color:#1e40af;font-weight:600;font-size:12px;text-transform:uppercase;border-top:1px solid #1e40af;border-bottom:1px solid #1e40af;padding:1px 8px;margin-top:2px;">JALINGO</div>
+                        </div>
+                        <div style="text-align:center;margin-top:15px;position:relative;z-index:2;height:170px;display:flex;justify-content:center;align-items:center;">
+                            ${photoUrl ? `<img src="${photoUrl}" style="width:140px;height:165px;object-fit:cover;border-radius:8px;border:3px solid #1e40af;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : ''}
+                            <div style="width:140px;height:165px;background:#e2e8f0;color:#64748b;display:${photoUrl?'none':'flex'};align-items:center;justify-content:center;font-size:50px;border-radius:8px;border:3px solid #1e40af;">${(profile.first_name||'U').charAt(0).toUpperCase()}</div>
+                        </div>
+                        <div style="text-align:center;margin-top:10px;position:relative;z-index:2;padding:0 10px;">
+                            <h3 style="color:#1e3a8a;font-weight:800;font-size:19px;margin:0;line-height:1.1;">${escapeHtml(fullName)}</h3>
+                            <div style="color:#4b5563;font-size:13px;font-weight:600;margin-top:3px;">${escapeHtml(profile.designation||'')}</div>
+                        </div>
+                        <div style="margin-top:15px;margin-left:70px;margin-right:15px;position:relative;z-index:2;font-size:12px;">
+                            <table style="width:100%;border-collapse:collapse;">
+                                <tr><td style="font-weight:700;color:#1e40af;width:55px;vertical-align:top;padding-bottom:5px;white-space:nowrap;">Staff ID:</td><td style="color:#111;font-weight:600;vertical-align:top;">${escapeHtml(staffId)}</td></tr>
+                                ${detailRows}
+                            </table>
+                        </div>
+                        <div style="position:absolute;bottom:0;left:0;right:0;height:40px;background:#1e40af;color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;z-index:2;">Issued: <?= date('F Y') ?></div>
+                    </div>
+                </div>
+                <div class="id-card" style="width:350px;height:550px;background:#fff;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.1);overflow:hidden;position:relative;">
+                    <div style="height:100%;position:relative;background:#fff;display:flex;flex-direction:column;">
+                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:120px;font-weight:900;color:rgba(30,64,175,.05);z-index:0;pointer-events:none;">TSU</div>
+                        <div style="position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;">
+                            <div style="margin-bottom:20px;">
+                                <div style="font-size:14px;color:#1e40af;font-weight:800;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">SCAN THIS TO VERIFY</div>
+                                ${qrUrl ? `<img src="${qrUrl}" style="width:220px;height:220px;border:4px solid #1e3a8a;border-radius:12px;padding:5px;background:white;">` : ''}
+                            </div>
+                            ${profile.blood_group ? `<div style="border:3px solid #dc2626;border-radius:10px;padding:8px 30px;margin-bottom:20px;background:rgba(255,255,255,.95);min-width:140px;"><div style="font-size:12px;text-transform:uppercase;color:#dc2626;font-weight:800;letter-spacing:1px;">Blood Group</div><div style="font-size:32px;font-weight:900;color:#333;line-height:1.1;">${escapeHtml(profile.blood_group)}</div></div>` : ''}
+                            <div style="font-size:11px;color:#4b5563;line-height:1.4;margin-top:auto;margin-bottom:5px;"><p style="margin:0;">If found, please return to:</p><strong style="color:#1e40af;display:block;font-size:13px;margin:2px 0;">SECURITY UNIT</strong><p style="margin:0;">Taraba State University<br>Jalingo, Nigeria</p></div>
+                        </div>
+                        <div style="height:40px;background:#1e40af;color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;z-index:2;">Property of Taraba State University</div>
+                    </div>
+                </div>
+            </div>`;
         }
 
-        function bulkSuspend() {
-            const ids = getSelectedUserIds();
-            if(!ids.length) return;
-            const reason = prompt("Enter suspension reason:", "Policy Violation");
-            if (reason) performAction('<?= url('admin/bulk-suspend-users') ?>', { user_ids: ids, reason: reason }, null);
+        async function downloadAllPDFs() {
+            const { jsPDF } = window.jspdf;
+            const zip = new JSZip();
+            const btn = document.getElementById('downloadAllBtn');
+            btn.disabled = true; btn.innerHTML = 'Processing...';
+            const wrappers = document.querySelectorAll('.id-card-wrapper');
+            for (let i = 0; i < wrappers.length; i++) {
+                const cards = wrappers[i].querySelectorAll('.id-card');
+                const pdf   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [54, 85.6] });
+                pdf.addImage((await html2canvas(cards[0], { scale: 2, useCORS: true })).toDataURL('image/jpeg'), 'JPEG', 0, 0, 54, 85.6);
+                pdf.addPage();
+                pdf.addImage((await html2canvas(cards[1], { scale: 2, useCORS: true })).toDataURL('image/jpeg'), 'JPEG', 0, 0, 54, 85.6);
+                const p = window.generatedProfiles[i];
+                zip.file(`ID_${p.staff_number || p.id}.pdf`, pdf.output('blob'));
+            }
+            saveAs(await zip.generateAsync({ type: 'blob' }), 'TSU_IDs.zip');
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-download me-2"></i>Download All';
         }
-
-        // --- SINGLE ACTIONS ---
-        
-        function deleteUser(userId) {
-            performAction('<?= url('admin/delete-user') ?>', { user_id: userId }, 'Delete this user?');
-        }
-
-        function activateUser(userId) {
-            performAction('<?= url('admin/activate-user') ?>', { user_id: userId }, 'Activate this user?');
-        }
-
-        function generateIDCard(userId) {
-            window.open('<?= url('admin/id-cards/preview') ?>/' + userId, '_blank');
-        }
+    </script>
+</body>
+</html>
 
         // --- ID CARD GENERATION (JS) ---
 
