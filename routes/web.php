@@ -127,6 +127,7 @@ $router->get('/admin/id-cards/preview/{id}', 'IDCardController@preview', ['Auth'
 $router->get('/admin/id-cards/generated', 'IDCardController@generatedCards', ['Auth', 'Admin']);
 $router->post('/admin/id-cards/generate/{id}', 'IDCardController@generate', ['Auth', 'Admin']);
 $router->post('/admin/id-cards/regenerate-qr/{id}', 'IDCardController@regenerateQR', ['Auth', 'Admin']);
+$router->post('/admin/id-cards/mark-printed/{id}', 'IDCardController@markPrinted', ['Auth', 'Admin']);
 $router->post('/admin/id-cards/bulk-generate', 'IDCardController@bulkGenerate', ['Auth', 'Admin']);
 
 // QR Code serving route (public access for ID cards)

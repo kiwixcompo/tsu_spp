@@ -359,6 +359,48 @@ if (!function_exists('url')) {
             <button onclick="downloadIDCard()" class="btn btn-success btn-lg">
                 <i class="fas fa-download me-2"></i>Download PDF
             </button>
+
+            <?php if (!empty($is_printed)): ?>
+                <span class="badge bg-success fs-6 align-self-center ms-2 p-2">
+                    <i class="fas fa-check-circle me-1"></i>Printed
+                    <?php if ($printed_at): ?>
+                        &mdash; <?= date('M j, Y', strtotime($printed_at)) ?>
+                    <?php endif; ?>
+                </span>
+                <button class="btn btn-outline-warning btn-lg" onclick="showMarkPrintedModal(true)">
+                    <i class="fas fa-undo me-2"></i>Unmark as Printed
+                </button>
+            <?php else: ?>
+                <button class="btn btn-warning btn-lg" id="markPrintedBtn" onclick="showMarkPrintedModal(false)">
+                    <i class="fas fa-stamp me-2"></i>Mark as Printed
+                </button>
+            <?php endif; ?>
+        </div>
+
+        <!-- Mark as Printed Modal -->
+        <div class="modal fade" id="markPrintedModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title" id="markPrintedModalTitle">
+                            <i class="fas fa-stamp me-2 text-warning"></i>Mark ID Card as Printed?
+                        </h5>
+                    </div>
+                    <div class="modal-body" id="markPrintedModalBody">
+                        <p class="mb-1">Confirm that the ID card for:</p>
+                        <p class="fw-bold fs-5 mb-1"><?= htmlspecialchars(trim(($profile['title'] ?? '') . ' ' . $profile['first_name'] . ' ' . $profile['last_name'])) ?></p>
+                        <p class="text-muted small mb-3"><?= htmlspecialchars($profile['staff_number'] ?? '') ?></p>
+                        <p>has been <strong>physically printed</strong>. This will tag the profile as printed in the admin panel.</p>
+                        <p class="text-muted small">You can always unmark it later if needed.</p>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning" id="confirmMarkBtn" onclick="confirmMarkPrinted()">
+                            <i class="fas fa-check me-2"></i>Yes, Mark as Printed
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="row justify-content-center">
@@ -539,6 +581,73 @@ if (!function_exists('url')) {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
+        const userId = <?= (int)($profile['id'] ?? 0) ?>;
+        const csrfToken = '<?= $csrf_token ?>';
+        let isPrinted = <?= !empty($is_printed) ? 'true' : 'false' ?>;
+        let markPrintedModal;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            markPrintedModal = new bootstrap.Modal(document.getElementById('markPrintedModal'));
+
+            // Auto-prompt if not yet marked as printed
+            if (!isPrinted) {
+                setTimeout(() => showMarkPrintedModal(false), 800);
+            }
+        });
+
+        function showMarkPrintedModal(isUnmark) {
+            const title = document.getElementById('markPrintedModalTitle');
+            const body = document.getElementById('markPrintedModalBody');
+            const btn = document.getElementById('confirmMarkBtn');
+
+            if (isUnmark) {
+                title.innerHTML = '<i class="fas fa-undo me-2 text-secondary"></i>Unmark as Printed?';
+                body.innerHTML = `<p>This will remove the "Printed" tag from this ID card. You can re-mark it later.</p>`;
+                btn.className = 'btn btn-secondary';
+                btn.innerHTML = '<i class="fas fa-undo me-2"></i>Yes, Unmark';
+                btn.onclick = () => confirmMarkPrinted(0);
+            } else {
+                title.innerHTML = '<i class="fas fa-stamp me-2 text-warning"></i>Mark ID Card as Printed?';
+                body.innerHTML = `
+                    <p class="mb-1">Confirm that the ID card for:</p>
+                    <p class="fw-bold fs-5 mb-1"><?= htmlspecialchars(trim(($profile['title'] ?? '') . ' ' . $profile['first_name'] . ' ' . $profile['last_name'])) ?></p>
+                    <p class="text-muted small mb-3"><?= htmlspecialchars($profile['staff_number'] ?? '') ?></p>
+                    <p>has been <strong>physically printed</strong>. This will tag the profile as printed in the admin panel.</p>
+                    <p class="text-muted small">You can always unmark it later if needed.</p>`;
+                btn.className = 'btn btn-warning';
+                btn.innerHTML = '<i class="fas fa-check me-2"></i>Yes, Mark as Printed';
+                btn.onclick = () => confirmMarkPrinted(1);
+            }
+
+            markPrintedModal.show();
+        }
+
+        function confirmMarkPrinted(value = 1) {
+            const btn = document.getElementById('confirmMarkBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+
+            fetch('<?= url('admin/id-cards/mark-printed') ?>/' + userId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                body: JSON.stringify({ printed: value })
+            })
+            .then(r => r.json())
+            .then(data => {
+                markPrintedModal.hide();
+                if (data.success) {
+                    // Reload to reflect updated badge
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to update'));
+                }
+            })
+            .catch(() => {
+                markPrintedModal.hide();
+                alert('Network error. Please try again.');
+            });
+        }
+
         async function downloadIDCard() {
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({
@@ -559,16 +668,11 @@ if (!function_exists('url')) {
             };
 
             try {
-                // Front
                 const frontImg = await captureCard('id-card-front');
                 pdf.addImage(frontImg, 'JPEG', 0, 0, 54, 85.6);
-                
-                // Back
                 pdf.addPage();
                 const backImg = await captureCard('id-card-back');
                 pdf.addImage(backImg, 'JPEG', 0, 0, 54, 85.6);
-                
-                // Save
                 const staffName = '<?= htmlspecialchars(trim(($profile['first_name'] ?? '') . '_' . ($profile['last_name'] ?? ''))) ?>';
                 pdf.save(`ID_Card_${staffName}.pdf`);
             } catch (error) {

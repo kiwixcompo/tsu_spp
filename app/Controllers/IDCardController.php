@@ -129,12 +129,11 @@ class IDCardController extends Controller
         // Ensure QR code exists and is valid
         $qrCodeUrl = $this->ensureQRCodeExists($userId, $profile['profile_slug'], $profile['qr_code_path']);
 
-        // Mark ID card as generated when preview is accessed
-        $this->db->update('profiles', [
-            'id_card_generated' => 1,
-            'id_card_generated_at' => date('Y-m-d H:i:s'),
-            'id_card_generated_by' => $_SESSION['user_id'] ?? null
-        ], 'user_id = ?', [$userId]);
+        // Fetch current printed status to pass to view
+        $printedStatus = $this->db->fetch(
+            "SELECT id_card_generated, id_card_generated_at FROM profiles WHERE user_id = ?",
+            [$userId]
+        );
 
         // Decode HTML entities for proper display on ID card
         $textFields = ['title', 'first_name', 'middle_name', 'last_name', 'faculty', 'department', 'unit', 'directorate', 'designation', 'staff_number', 'email', 'blood_group'];
@@ -147,6 +146,9 @@ class IDCardController extends Controller
         $this->view('admin/id-card-preview', [
             'profile' => $profile,
             'qr_code_url' => $qrCodeUrl,
+            'is_printed' => !empty($printedStatus['id_card_generated']),
+            'printed_at' => $printedStatus['id_card_generated_at'] ?? null,
+            'csrf_token' => $this->generateCSRFToken(),
         ]);
     }
 
@@ -320,6 +322,45 @@ class IDCardController extends Controller
         $this->json([
             'success' => true,
             'profiles' => $results,
+        ]);
+    }
+
+    /**
+     * Mark an ID card as printed (called explicitly by admin from preview page)
+     */
+    public function markPrinted(int $userId): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        if (!$this->db) {
+            $this->json(['error' => 'Database unavailable'], 500);
+            return;
+        }
+
+        $profile = $this->db->fetch("SELECT id FROM profiles WHERE user_id = ?", [$userId]);
+        if (!$profile) {
+            $this->json(['error' => 'Profile not found'], 404);
+            return;
+        }
+
+        $printed = (int)($this->input('printed') ?? 1);
+
+        $this->db->update('profiles', [
+            'id_card_generated' => $printed,
+            'id_card_generated_at' => $printed ? date('Y-m-d H:i:s') : null,
+            'id_card_generated_by' => $printed ? ($_SESSION['user_id'] ?? null) : null,
+        ], 'user_id = ?', [$userId]);
+
+        $this->json([
+            'success' => true,
+            'message' => $printed ? 'ID card marked as printed.' : 'ID card unmarked.',
+            'printed_at' => $printed ? date('F j, Y g:i A') : null,
         ]);
     }
 
