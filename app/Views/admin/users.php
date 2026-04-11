@@ -82,6 +82,7 @@ if (!function_exists('url')) {
                                 <button class="btn btn-warning" onclick="bulkSuspend()" id="bulkSuspendBtn" disabled><i class="fas fa-ban me-2"></i>Suspend</button>
                                 <button class="btn btn-danger" onclick="bulkDelete()" id="bulkDeleteBtn" disabled><i class="fas fa-trash me-2"></i>Delete</button>
                                 <button class="btn btn-secondary" onclick="bulkSendPhotoReminder()" id="bulkPhotoReminderBtn" disabled title="Send photo update reminder email"><i class="fas fa-camera me-2"></i>Send Photo Reminder</button>
+                                <button class="btn btn-outline-warning" onclick="bulkSendProfileReminder()" id="bulkProfileReminderBtn" disabled title="Send profile completion reminder"><i class="fas fa-user-edit me-2"></i>Send Profile Reminder</button>
                                 <button class="btn btn-outline-success" onclick="exportToExcel()"><i class="fas fa-file-excel me-2"></i>Export to Excel</button>
                                 <span class="badge bg-secondary align-self-center ms-2 fs-6"><span id="selectedCount">0</span> selected</span>
                             </div>
@@ -112,7 +113,7 @@ if (!function_exists('url')) {
                                 </div>
                                 <div class="col-md-2">
                                     <select id="facultyFilter" class="form-select" onchange="performSearch()">
-                                        <option value="">All Faculties</option>
+                                        <option value="">All Faculties / Directorates</option>
                                     </select>
                                 </div>
                                 <div class="col-md-2">
@@ -131,6 +132,7 @@ if (!function_exists('url')) {
                                     <select id="noPhotoFilter" class="form-select" onchange="performSearch()">
                                         <option value="">All Photo Status</option>
                                         <option value="1">No Photo Uploaded</option>
+                                        <option value="0">Photo Uploaded</option>
                                     </select>
                                 </div>
                             </div>
@@ -372,13 +374,16 @@ if (!function_exists('url')) {
 
         // Load filter dropdowns from API
         function loadFilterOptions() {
-            fetch('<?= url('/faculties-departments') ?>')
+            // Load all faculties AND directorates from the combined endpoint
+            fetch('<?= url('/directorates-units') ?>')
                 .then(r => r.json())
                 .then(data => {
                     const sel = document.getElementById('facultyFilter');
-                    Object.keys(data.data || data).forEach(f => {
+                    const entries = Object.keys(data.data || {});
+                    entries.forEach(name => {
                         const o = document.createElement('option');
-                        o.value = o.textContent = f;
+                        o.value = name;
+                        o.textContent = name;
                         sel.appendChild(o);
                     });
                 })
@@ -400,7 +405,7 @@ if (!function_exists('url')) {
         function updateBulkButtons() {
             const count = document.querySelectorAll('.user-checkbox:checked').length;
             document.getElementById('selectedCount').textContent = count;
-            ['bulkIDCardBtn','bulkVerifyBtn','bulkActivateBtn','bulkSuspendBtn','bulkDeleteBtn','bulkPhotoReminderBtn']
+            ['bulkIDCardBtn','bulkVerifyBtn','bulkActivateBtn','bulkSuspendBtn','bulkDeleteBtn','bulkPhotoReminderBtn','bulkProfileReminderBtn']
                 .forEach(id => { const b = document.getElementById(id); if (b) b.disabled = count === 0; });
         }
 
@@ -434,6 +439,17 @@ if (!function_exists('url')) {
             if (!ids.length) return;
             if (!confirm(`Send photo reminder to ${ids.length} user(s)?`)) return;
             fetch('<?= url('admin/users/send-photo-reminder') ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                body: JSON.stringify({ user_ids: ids })
+            }).then(r => r.json()).then(d => alert(d.success ? d.message : 'Error: ' + d.error)).catch(() => alert('Network error.'));
+        }
+
+        function bulkSendProfileReminder() {
+            const ids = getSelectedUserIds();
+            if (!ids.length) return;
+            if (!confirm(`Send profile completion reminder to ${ids.length} user(s)?`)) return;
+            fetch('<?= url('admin/users/send-profile-reminder') ?>', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                 body: JSON.stringify({ user_ids: ids })

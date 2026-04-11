@@ -1548,7 +1548,7 @@ class AdminController extends Controller
             }
             if (!empty($staffType)) { $conditions[] = "p.staff_type = ?"; $params[] = $staffType; }
             if (!empty($gender))    { $conditions[] = "p.gender = ?";     $params[] = $gender; }
-            if (!empty($faculty))   { $conditions[] = "p.faculty = ?";    $params[] = $faculty; }
+            if (!empty($faculty))   { $conditions[] = "(p.faculty = ? OR p.directorate = ?)"; $params[] = $faculty; $params[] = $faculty; }
             if (!empty($unit))      { $conditions[] = "p.unit = ?";       $params[] = $unit; }
 
             if ($idCardFilter === 'printed') {
@@ -1559,6 +1559,8 @@ class AdminController extends Controller
 
             if ($noPhoto === '1') {
                 $conditions[] = "(p.profile_photo IS NULL OR p.profile_photo = '')";
+            } elseif ($noPhoto === '0') {
+                $conditions[] = "(p.profile_photo IS NOT NULL AND p.profile_photo != '')";
             }
 
             $whereClause = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
@@ -1741,6 +1743,204 @@ class AdminController extends Controller
     }
 
     /**
+     * Send profile completion reminder to selected users
+     */
+    public function sendProfileCompletionReminder(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $userIds = $this->input('user_ids');
+        if (!is_array($userIds) || empty($userIds)) {
+            $this->json(['error' => 'No users selected'], 400);
+            return;
+        }
+
+        $userIds = array_values(array_filter(array_map('intval', $userIds), fn($id) => $id > 0));
+        if (empty($userIds)) {
+            $this->json(['error' => 'Invalid user IDs'], 400);
+            return;
+        }
+
+        try {
+            $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+            $users = $this->db->fetchAll(
+                "SELECT u.id, u.email,
+                        p.first_name, p.last_name,
+                        p.profile_photo, p.professional_summary,
+                        p.designation, p.blood_group, p.gender,
+                        p.faculty, p.department, p.directorate, p.unit
+                 FROM users u
+                 LEFT JOIN profiles p ON u.id = p.user_id
+                 WHERE u.id IN ($placeholders)",
+                $userIds
+            );
+
+            if (empty($users)) {
+                $this->json(['error' => 'No users found'], 404);
+                return;
+            }
+
+            // For each user, also check education, experience, skills counts
+            $emailHelper = new \App\Helpers\EmailHelper();
+            $sent = 0;
+            $failed = 0;
+            $appUrl = $_ENV['APP_URL'] ?? 'https://staff.tsuniversity.edu.ng';
+
+            foreach ($users as $user) {
+                $userId = (int)$user['id'];
+                $name   = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?: 'Staff Member';
+
+                // Determine missing sections
+                $missing = [];
+
+                // Must-have for ID card
+                if (empty($user['profile_photo'])) {
+                    $missing['photo'] = ['label' => 'Profile Photo', 'required' => true, 'url' => $appUrl . '/profile/edit'];
+                }
+                if (empty($user['designation'])) {
+                    $missing['designation'] = ['label' => 'Job Title / Designation', 'required' => true, 'url' => $appUrl . '/profile/edit'];
+                }
+                if (empty($user['blood_group'])) {
+                    $missing['blood_group'] = ['label' => 'Blood Group', 'required' => true, 'url' => $appUrl . '/profile/edit'];
+                }
+                if (empty($user['gender'])) {
+                    $missing['gender'] = ['label' => 'Gender', 'required' => true, 'url' => $appUrl . '/profile/edit'];
+                }
+                $hasDept = !empty($user['faculty']) || !empty($user['directorate']);
+                if (!$hasDept) {
+                    $missing['department'] = ['label' => 'Faculty / Directorate', 'required' => true, 'url' => $appUrl . '/profile/edit'];
+                }
+
+                // Recommended sections
+                if (empty($user['professional_summary'])) {
+                    $missing['summary'] = ['label' => 'Professional Summary', 'required' => false, 'url' => $appUrl . '/profile/edit'];
+                }
+
+                try {
+                    $eduCount = $this->db->fetch("SELECT COUNT(*) as c FROM education WHERE user_id = ?", [$userId])['c'] ?? 0;
+                    if ($eduCount == 0) {
+                        $missing['education'] = ['label' => 'Education / Qualifications', 'required' => false, 'url' => $appUrl . '/profile/education'];
+                    }
+                } catch (\Exception $e) {}
+
+                try {
+                    $expCount = $this->db->fetch("SELECT COUNT(*) as c FROM experience WHERE user_id = ?", [$userId])['c'] ?? 0;
+                    if ($expCount == 0) {
+                        $missing['experience'] = ['label' => 'Work Experience', 'required' => false, 'url' => $appUrl . '/profile/experience'];
+                    }
+                } catch (\Exception $e) {}
+
+                // If nothing is missing, skip
+                if (empty($missing)) {
+                    $sent++; // count as "sent" but skip — profile is complete
+                    continue;
+                }
+
+                $subject = 'Action Required: Complete Your TSU Staff Profile';
+                $body    = $this->getProfileCompletionEmailBody($name, $missing, $appUrl);
+
+                try {
+                    $emailHelper->sendRawEmail($user['email'], $subject, $body);
+                    $sent++;
+                } catch (\Exception $e) {
+                    error_log("Profile reminder failed for {$user['email']}: " . $e->getMessage());
+                    $failed++;
+                }
+            }
+
+            $this->logActivity('profile_reminder_sent', ['user_ids' => $userIds, 'sent' => $sent, 'failed' => $failed]);
+
+            $this->json([
+                'success' => true,
+                'message' => "Reminder sent to $sent user(s)" . ($failed > 0 ? ", $failed failed" : ''),
+            ]);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to send reminders: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function getProfileCompletionEmailBody(string $name, array $missing, string $appUrl): string
+    {
+        $requiredItems  = array_filter($missing, fn($m) => $m['required']);
+        $recommendedItems = array_filter($missing, fn($m) => !$m['required']);
+
+        $requiredHtml = '';
+        foreach ($requiredItems as $item) {
+            $requiredHtml .= "<li style='margin-bottom:8px;'>
+                <strong style='color:#dc2626;'>⚠ {$item['label']}</strong>
+                &mdash; <a href='{$item['url']}' style='color:#1e40af;'>Add now</a>
+            </li>";
+        }
+
+        $recommendedHtml = '';
+        foreach ($recommendedItems as $item) {
+            $recommendedHtml .= "<li style='margin-bottom:8px;'>
+                <span style='color:#d97706;'>◉ {$item['label']}</span>
+                &mdash; <a href='{$item['url']}' style='color:#1e40af;'>Add now</a>
+            </li>";
+        }
+
+        $requiredSection = $requiredHtml ? "
+            <div style='background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin:16px 0;'>
+                <h3 style='color:#dc2626;margin-top:0;font-size:15px;'>🚫 Required for ID Card — Must be completed</h3>
+                <ul style='margin:0;padding-left:20px;'>{$requiredHtml}</ul>
+                <p style='margin:10px 0 0;font-size:13px;color:#7f1d1d;'><strong>Your ID card will not be printed until these are completed.</strong></p>
+            </div>" : '';
+
+        $recommendedSection = $recommendedHtml ? "
+            <div style='background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:16px;margin:16px 0;'>
+                <h3 style='color:#92400e;margin-top:0;font-size:15px;'>📝 Recommended — Improve your profile</h3>
+                <ul style='margin:0;padding-left:20px;'>{$recommendedHtml}</ul>
+            </div>" : '';
+
+        return "
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset='utf-8'><title>Complete Your Profile</title>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #1e40af; color: white; padding: 20px; text-align: center; }
+            .content { padding: 24px 20px; background: #f9fafb; }
+            .button { display: inline-block; padding: 12px 28px; background: #1e40af; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0; font-weight: bold; }
+            .footer { padding: 20px; text-align: center; color: #666; font-size: 13px; }
+        </style>
+        </head>
+        <body>
+        <div class='container'>
+            <div class='header'>
+                <h1>TSU Staff Portal</h1>
+                <p>Profile Completion Required</p>
+            </div>
+            <div class='content'>
+                <p>Dear <strong>{$name}</strong>,</p>
+                <p>Your TSU Staff Portal profile is <strong>incomplete</strong>. Please update the sections listed below to ensure your profile is ready and your ID card can be processed.</p>
+
+                {$requiredSection}
+                {$recommendedSection}
+
+                <p>A complete profile ensures you appear correctly in the staff directory and that your ID card can be generated without delays.</p>
+
+                <div style='text-align:center;'>
+                    <a href='{$appUrl}/profile/edit' class='button'>Complete My Profile</a>
+                </div>
+            </div>
+            <div class='footer'>
+                <p>TSU Staff Portal &mdash; Taraba State University, Jalingo</p>
+                <p>If you have already completed your profile, please disregard this message.</p>
+            </div>
+        </div>
+        </body>
+        </html>";
+    }
+
+    /**
      * Export users to Excel with categorized sheets
      */
     public function exportUsers(): void
@@ -1776,7 +1976,8 @@ class AdminController extends Controller
             }
 
             if (!empty($faculty)) {
-                $conditions[] = "p.faculty = ?";
+                $conditions[] = "(p.faculty = ? OR p.directorate = ?)";
+                $params[] = $faculty;
                 $params[] = $faculty;
             }
 
