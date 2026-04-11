@@ -319,7 +319,10 @@ class AdminController extends Controller
         try {
             return $this->db->fetchAll("
                 SELECT u.id, u.email, u.account_status, u.email_verified, u.created_at, u.last_login, u.role,
-                       p.first_name, p.last_name, p.faculty, p.department, p.unit, p.designation, p.staff_number, p.profile_slug
+                       p.first_name, p.last_name, p.faculty, p.department, p.unit, p.directorate,
+                       p.designation, p.staff_number, p.profile_slug, p.staff_type, p.gender, p.profile_photo,
+                       COALESCE(p.id_card_generated, 0) as id_card_generated,
+                       p.id_card_generated_at
                 FROM users u
                 LEFT JOIN profiles p ON u.id = p.user_id
                 ORDER BY u.created_at DESC

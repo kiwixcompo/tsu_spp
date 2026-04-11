@@ -33,6 +33,8 @@ if (!function_exists('url')) {
         .btn-group-sm .btn { padding: 0.2rem 0.4rem; font-size: 0.75rem; }
         .badge { font-size: 0.7rem; }
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        /* Ensure Actions column is always visible */
+        .col-actions { min-width: 110px; }
         .preview-modal-dialog { max-width: 900px; }
         @media (max-width: 768px) { .admin-sidebar { width: 60px; } .admin-sidebar .sidebar-text { display: none; } .main-content { margin-left: 60px; width: calc(100% - 60px); } }
     </style>
@@ -145,14 +147,14 @@ if (!function_exists('url')) {
                                 <table class="table table-hover mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th width="40"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                                            <th width="30"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
                                             <th>Name</th>
                                             <th>Staff ID</th>
                                             <th>Email</th>
                                             <th>Faculty/Unit</th>
                                             <th>Status</th>
                                             <th>ID Card</th>
-                                            <th>Actions</th>
+                                            <th class="col-actions">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="usersTableBody">
@@ -188,7 +190,7 @@ if (!function_exists('url')) {
                                                             <span class="badge bg-secondary">Not Printed</span>
                                                         <?php endif; ?>
                                                     </td>
-                                                    <td>
+                                                    <td class="col-actions">
                                                         <div class="btn-group btn-group-sm">
                                                             <button class="btn btn-outline-primary" onclick="generateIDCard(<?= $user['id'] ?>)" title="Generate ID"><i class="fas fa-id-card"></i></button>
                                                             <button class="btn btn-outline-success" onclick="activateUser(<?= $user['id'] ?>)" title="Activate"><i class="fas fa-check"></i></button>
@@ -228,6 +230,12 @@ if (!function_exists('url')) {
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
     <script>
         const csrfToken = '<?= $_SESSION['csrf_token'] ?? '' ?>';
