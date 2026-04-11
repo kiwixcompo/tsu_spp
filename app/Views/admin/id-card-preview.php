@@ -436,6 +436,9 @@ if (!function_exists('url')) {
                                 $hasUnit = !empty($profile['unit']);
                                 $hasFaculty = !empty($profile['faculty']);
                                 $hasDepartment = !empty($profile['department']);
+
+                                // Strip verbose prefixes for cleaner ID card display
+                                $dirLabel = preg_replace('/^(Directorate of |Faculty of )/i', '', $profile['directorate'] ?? '');
                                 ?>
                                 <table class="details-table">
                                     <tr>
@@ -446,7 +449,7 @@ if (!function_exists('url')) {
                                         <?php if ($hasDirectorate): ?>
                                         <tr>
                                             <td class="details-label">Directorate:</td>
-                                            <td class="details-value"><?= htmlspecialchars($profile['directorate']) ?></td>
+                                            <td class="details-value"><?= htmlspecialchars($dirLabel) ?></td>
                                         </tr>
                                         <?php endif; ?>
                                         <?php if ($hasUnit): ?>

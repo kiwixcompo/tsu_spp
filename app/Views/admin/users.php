@@ -75,6 +75,7 @@ if (!function_exists('url')) {
                                 <button class="btn btn-success" onclick="bulkActivate()" id="bulkActivateBtn" disabled><i class="fas fa-check me-2"></i>Activate</button>
                                 <button class="btn btn-warning" onclick="bulkSuspend()" id="bulkSuspendBtn" disabled><i class="fas fa-ban me-2"></i>Suspend</button>
                                 <button class="btn btn-danger" onclick="bulkDelete()" id="bulkDeleteBtn" disabled><i class="fas fa-trash me-2"></i>Delete</button>
+                                <button class="btn btn-secondary" onclick="bulkSendPhotoReminder()" id="bulkPhotoReminderBtn" disabled title="Send photo update reminder email"><i class="fas fa-camera me-2"></i>Send Photo Reminder</button>
                                 <button class="btn btn-outline-success" onclick="exportToExcel()"><i class="fas fa-file-excel me-2"></i>Export to Excel</button>
                                 <span class="badge bg-secondary align-self-center ms-2 fs-6"><span id="selectedCount">0</span> selected</span>
                             </div>
@@ -89,28 +90,41 @@ if (!function_exists('url')) {
                             </div>
 
                             <div class="row g-2">
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <select id="staffTypeFilter" class="form-select" onchange="performSearch()">
                                         <option value="">All Staff Types</option>
                                         <option value="teaching">Teaching Staff</option>
                                         <option value="non-teaching">Non-Teaching Staff</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <select id="genderFilter" class="form-select" onchange="performSearch()">
                                         <option value="">All Genders</option>
                                         <option value="male">Male</option>
                                         <option value="female">Female</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <select id="facultyFilter" class="form-select" onchange="performSearch()">
                                         <option value="">All Faculties</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <select id="unitFilter" class="form-select" onchange="performSearch()">
                                         <option value="">All Units</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <select id="idCardFilter" class="form-select" onchange="performSearch()">
+                                        <option value="">All ID Card Status</option>
+                                        <option value="printed">ID Card Printed</option>
+                                        <option value="not_printed">Not Yet Printed</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <select id="noPhotoFilter" class="form-select" onchange="performSearch()">
+                                        <option value="">All Photo Status</option>
+                                        <option value="1">No Photo Uploaded</option>
                                     </select>
                                 </div>
                             </div>
@@ -133,6 +147,7 @@ if (!function_exists('url')) {
                                             <th>Email</th>
                                             <th>Faculty/Unit</th>
                                             <th>Status</th>
+                                            <th>ID Card</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -162,6 +177,13 @@ if (!function_exists('url')) {
                                                         ?>
                                                     </td>
                                                     <td><span class="badge bg-<?= $user['account_status'] === 'active' ? 'success' : ($user['account_status'] === 'pending' ? 'warning' : 'danger') ?>"><?= ucfirst($user['account_status']) ?></span></td>
+                                                    <td>
+                                                        <?php if (!empty($user['id_card_generated'])): ?>
+                                                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>Printed</span>
+                                                        <?php else: ?>
+                                                            <span class="badge bg-secondary">Not Printed</span>
+                                                        <?php endif; ?>
+                                                    </td>
                                                     <td>
                                                         <div class="btn-group btn-group-sm">
                                                             <button class="btn btn-outline-primary" onclick="generateIDCard(<?= $user['id'] ?>)" title="Generate ID"><i class="fas fa-id-card"></i></button>
@@ -237,14 +259,12 @@ if (!function_exists('url')) {
             const gender = document.getElementById('genderFilter').value;
             const faculty = document.getElementById('facultyFilter').value;
             const unit = document.getElementById('unitFilter').value;
+            const idCardFilter = document.getElementById('idCardFilter').value;
+            const noPhoto = document.getElementById('noPhotoFilter').value;
 
             const params = new URLSearchParams({
-                query: query,
-                staff_type: staffType,
-                gender: gender,
-                faculty: faculty,
-                unit: unit,
-                page: page
+                query, staff_type: staffType, gender, faculty, unit,
+                id_card_filter: idCardFilter, no_photo: noPhoto, page
             });
 
             fetch('<?= url('/admin/users/search') ?>', {
@@ -272,12 +292,11 @@ if (!function_exists('url')) {
             });
         }
 
-        // Update user table with search results
         function updateUserTable(users) {
             const tbody = document.getElementById('usersTableBody');
             
             if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-muted">No users found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-muted">No users found</td></tr>';
                 return;
             }
 
@@ -296,19 +315,20 @@ if (!function_exists('url')) {
 
                 const statusClass = user.account_status === 'active' ? 'success' : (user.account_status === 'pending' ? 'warning' : 'danger');
                 const statusText = user.account_status ? user.account_status.charAt(0).toUpperCase() + user.account_status.slice(1) : 'Unknown';
-
+                const idCardBadge = parseInt(user.id_card_generated) === 1
+                    ? `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Printed</span>`
+                    : `<span class="badge bg-secondary">Not Printed</span>`;
                 const isAdmin = user.role === 'admin';
 
                 html += `
                     <tr class="user-row">
-                        <td>
-                            ${!isAdmin ? `<input type="checkbox" class="user-checkbox" value="${user.id}" onchange="updateBulkButtons()">` : ''}
-                        </td>
+                        <td>${!isAdmin ? `<input type="checkbox" class="user-checkbox" value="${user.id}" onchange="updateBulkButtons()">` : ''}</td>
                         <td>${escapeHtml(fullName)}</td>
                         <td class="fw-bold text-primary">${escapeHtml(staffNumber)}</td>
                         <td>${escapeHtml(email)}</td>
                         <td>${facultyUnit}</td>
                         <td><span class="badge bg-${statusClass}">${statusText}</span></td>
+                        <td>${idCardBadge}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <button class="btn btn-outline-primary" onclick="generateIDCard(${user.id})" title="Generate ID"><i class="fas fa-id-card"></i></button>
@@ -482,7 +502,7 @@ if (!function_exists('url')) {
             const count = document.querySelectorAll('.user-checkbox:checked').length;
             document.getElementById('selectedCount').textContent = count;
             
-            const ids = ['bulkIDCardBtn', 'bulkVerifyBtn', 'bulkActivateBtn', 'bulkSuspendBtn', 'bulkDeleteBtn'];
+            const ids = ['bulkIDCardBtn', 'bulkVerifyBtn', 'bulkActivateBtn', 'bulkSuspendBtn', 'bulkDeleteBtn', 'bulkPhotoReminderBtn'];
             ids.forEach(id => {
                 const btn = document.getElementById(id);
                 if(btn) btn.disabled = count === 0;
@@ -523,6 +543,28 @@ if (!function_exists('url')) {
         function bulkDelete() {
             const ids = getSelectedUserIds();
             if(ids.length) performAction('<?= url('admin/bulk-delete-users') ?>', { user_ids: ids }, 'Delete selected users? Cannot be undone.');
+        }
+
+        function bulkSendPhotoReminder() {
+            const ids = getSelectedUserIds();
+            if (!ids.length) return;
+            if (!confirm(`Send photo update reminder email to ${ids.length} selected user(s)?`)) return;
+
+            fetch('<?= url('admin/users/send-photo-reminder') ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                body: JSON.stringify({ user_ids: ids })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to send reminders'));
+                }
+            })
+            .catch(() => alert('Network error. Please try again.'));
+        }
         }
 
         function bulkVerify() {

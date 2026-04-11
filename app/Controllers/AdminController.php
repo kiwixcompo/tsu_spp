@@ -1528,12 +1528,13 @@ class AdminController extends Controller
         $gender = $this->sanitizeInput($this->input('gender') ?? '');
         $faculty = $this->sanitizeInput($this->input('faculty') ?? '');
         $unit = $this->sanitizeInput($this->input('unit') ?? '');
+        $idCardFilter = $this->sanitizeInput($this->input('id_card_filter') ?? ''); // 'printed' | 'not_printed'
+        $noPhoto = $this->sanitizeInput($this->input('no_photo') ?? '');            // '1' = no photo only
         $page = (int)($this->input('page') ?: 1);
         $limit = 20;
         $offset = ($page - 1) * $limit;
 
         try {
-            // Build WHERE clause
             $conditions = [];
             $params = [];
 
@@ -1542,48 +1543,46 @@ class AdminController extends Controller
                 $searchTerm = "%$query%";
                 $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
             }
+            if (!empty($staffType)) { $conditions[] = "p.staff_type = ?"; $params[] = $staffType; }
+            if (!empty($gender))    { $conditions[] = "p.gender = ?";     $params[] = $gender; }
+            if (!empty($faculty))   { $conditions[] = "p.faculty = ?";    $params[] = $faculty; }
+            if (!empty($unit))      { $conditions[] = "p.unit = ?";       $params[] = $unit; }
 
-            if (!empty($staffType)) {
-                $conditions[] = "p.staff_type = ?";
-                $params[] = $staffType;
+            if ($idCardFilter === 'printed') {
+                $conditions[] = "p.id_card_generated = 1";
+            } elseif ($idCardFilter === 'not_printed') {
+                $conditions[] = "(p.id_card_generated IS NULL OR p.id_card_generated = 0)";
             }
 
-            if (!empty($gender)) {
-                $conditions[] = "p.gender = ?";
-                $params[] = $gender;
-            }
-
-            if (!empty($faculty)) {
-                $conditions[] = "p.faculty = ?";
-                $params[] = $faculty;
-            }
-
-            if (!empty($unit)) {
-                $conditions[] = "p.unit = ?";
-                $params[] = $unit;
+            if ($noPhoto === '1') {
+                $conditions[] = "(p.profile_photo IS NULL OR p.profile_photo = '')";
             }
 
             $whereClause = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
 
-            // Get total count
-            $countQuery = "SELECT COUNT(*) as count FROM users u LEFT JOIN profiles p ON u.id = p.user_id $whereClause";
-            $totalUsers = $this->db->fetch($countQuery, $params)['count'];
+            $totalUsers = $this->db->fetch(
+                "SELECT COUNT(*) as count FROM users u LEFT JOIN profiles p ON u.id = p.user_id $whereClause",
+                $params
+            )['count'];
             $totalPages = ceil($totalUsers / $limit);
 
-            // Get users
-            $usersQuery = "
+            $countParams = $params;
+            $params[] = $limit;
+            $params[] = $offset;
+
+            $users = $this->db->fetchAll("
                 SELECT u.id, u.email, u.account_status, u.email_verified, u.created_at, u.last_login, u.role,
-                       p.first_name, p.last_name, p.faculty, p.department, p.unit, p.designation, p.staff_number, p.profile_slug, p.staff_type, p.gender
+                       p.first_name, p.last_name, p.faculty, p.department, p.unit, p.directorate,
+                       p.designation, p.staff_number, p.profile_slug, p.staff_type, p.gender,
+                       p.profile_photo,
+                       COALESCE(p.id_card_generated, 0) as id_card_generated,
+                       p.id_card_generated_at
                 FROM users u
                 LEFT JOIN profiles p ON u.id = p.user_id
                 $whereClause
                 ORDER BY u.created_at DESC
                 LIMIT ? OFFSET ?
-            ";
-            $params[] = $limit;
-            $params[] = $offset;
-
-            $users = $this->db->fetchAll($usersQuery, $params);
+            ", $params);
 
             $this->json([
                 'success' => true,
@@ -1598,6 +1597,144 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             $this->json(['error' => 'Search failed: ' . $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Send photo reminder email to selected users
+     */
+    public function sendPhotoReminder(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $userIds = $this->input('user_ids');
+        if (!is_array($userIds) || empty($userIds)) {
+            $this->json(['error' => 'No users selected'], 400);
+            return;
+        }
+
+        $userIds = array_values(array_filter(array_map('intval', $userIds), fn($id) => $id > 0));
+        if (empty($userIds)) {
+            $this->json(['error' => 'Invalid user IDs'], 400);
+            return;
+        }
+
+        try {
+            $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+            $users = $this->db->fetchAll(
+                "SELECT u.id, u.email, p.first_name, p.last_name
+                 FROM users u
+                 LEFT JOIN profiles p ON u.id = p.user_id
+                 WHERE u.id IN ($placeholders)",
+                $userIds
+            );
+
+            if (empty($users)) {
+                $this->json(['error' => 'No users found'], 404);
+                return;
+            }
+
+            $emailHelper = new \App\Helpers\EmailHelper();
+            $sent = 0;
+            $failed = 0;
+
+            foreach ($users as $user) {
+                $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?: 'Staff Member';
+                $appUrl = $_ENV['APP_URL'] ?? 'https://staff.tsuniversity.edu.ng';
+                $editUrl = $appUrl . '/profile/edit';
+
+                $subject = 'Action Required: Update Your Profile Photo for ID Card';
+                $body = $this->getPhotoReminderEmailBody($name, $editUrl, $appUrl);
+
+                try {
+                    $emailHelper->sendRawEmail($user['email'], $subject, $body);
+                    $sent++;
+                } catch (\Exception $e) {
+                    error_log("Photo reminder email failed for {$user['email']}: " . $e->getMessage());
+                    $failed++;
+                }
+            }
+
+            $this->logActivity('photo_reminder_sent', ['user_ids' => $userIds, 'sent' => $sent, 'failed' => $failed]);
+
+            $this->json([
+                'success' => true,
+                'message' => "Reminder sent to $sent user(s)" . ($failed > 0 ? ", $failed failed" : ''),
+            ]);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to send reminders: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function getPhotoReminderEmailBody(string $name, string $editUrl, string $appUrl): string
+    {
+        return "
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset='utf-8'><title>Update Your Profile Photo</title>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #1e40af; color: white; padding: 20px; text-align: center; }
+            .content { padding: 30px 20px; background: #f9fafb; }
+            .button { display: inline-block; padding: 12px 28px; background: #1e40af; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold; }
+            .photo-guide { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; }
+            .photo-guide h3 { color: #1e40af; margin-top: 0; }
+            .good { color: #16a34a; } .bad { color: #dc2626; }
+            .sample-box { background: #f3f4f6; border: 2px dashed #9ca3af; border-radius: 8px; padding: 20px; text-align: center; margin: 15px 0; }
+            .footer { padding: 20px; text-align: center; color: #666; font-size: 13px; }
+        </style>
+        </head>
+        <body>
+        <div class='container'>
+            <div class='header'>
+                <h1>TSU Staff Portal</h1>
+                <p>Profile Photo Update Required</p>
+            </div>
+            <div class='content'>
+                <p>Dear <strong>{$name}</strong>,</p>
+                <p>Your ID card is pending production. To proceed, your profile photo must meet the requirements below. <strong>ID cards will not be printed until a suitable photo is uploaded.</strong></p>
+
+                <div class='sample-box'>
+                    <p style='font-size:60px; margin:0;'>🧑</p>
+                    <p style='margin:5px 0; font-weight:bold; color:#1e40af;'>Sample: Passport-style photo</p>
+                    <p style='margin:0; font-size:13px; color:#555;'>Face centred, plain background, shoulders visible</p>
+                </div>
+
+                <div class='photo-guide'>
+                    <h3>📋 Photo Requirements</h3>
+                    <p><span class='good'>✔</span> Clear, recent passport-style photo</p>
+                    <p><span class='good'>✔</span> Face clearly visible, looking directly at the camera</p>
+                    <p><span class='good'>✔</span> Plain white or light-coloured background</p>
+                    <p><span class='good'>✔</span> Head and shoulders only (no full-body shots)</p>
+                    <p><span class='good'>✔</span> Good lighting — no shadows across the face</p>
+                    <p><span class='good'>✔</span> Neutral expression or slight smile</p>
+                    <p><span class='good'>✔</span> File format: JPG or PNG, max 2MB</p>
+                    <hr>
+                    <p><span class='bad'>✘</span> No sunglasses, hats, or face coverings</p>
+                    <p><span class='bad'>✘</span> No group photos or cropped images</p>
+                    <p><span class='bad'>✘</span> No blurry, dark, or heavily filtered photos</p>
+                    <p><span class='bad'>✘</span> No photos taken from a distance</p>
+                </div>
+
+                <p>Please update your photo as soon as possible to avoid delays in ID card production.</p>
+
+                <div style='text-align:center;'>
+                    <a href='{$editUrl}' class='button'>Update My Profile Photo</a>
+                </div>
+            </div>
+            <div class='footer'>
+                <p>TSU Staff Portal &mdash; Taraba State University, Jalingo</p>
+                <p>If you have already updated your photo, please disregard this message.</p>
+            </div>
+        </div>
+        </body>
+        </html>";
     }
 
     /**

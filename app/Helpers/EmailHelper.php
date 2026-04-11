@@ -152,6 +152,30 @@ class EmailHelper
     }
 }
 
+    /**
+     * Send a raw HTML email (used for admin-triggered notifications)
+     */
+    public function sendRawEmail(string $to, string $subject, string $body): bool
+    {
+        try {
+            $this->saveEmailForDevelopment($to, $subject, $body);
+
+            if ($this->mailer === null) {
+                return $this->sendSimpleEmail($to, $subject, $body);
+            }
+
+            $this->mailer->clearAddresses();
+            $this->mailer->addAddress($to);
+            $this->mailer->Subject = $subject;
+            $this->mailer->Body = $body;
+            $this->mailer->AltBody = strip_tags($body);
+            return $this->mailer->send();
+        } catch (\Exception $e) {
+            error_log("sendRawEmail failed to $to: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function sendPasswordResetEmail(string $email, string $token): bool
     {
         try {

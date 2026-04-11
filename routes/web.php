@@ -119,6 +119,7 @@ $router->get('/admin/settings', 'AdminController@settings', ['Auth', 'Admin']);
 $router->post('/admin/settings', 'AdminController@updateSettings', ['Auth', 'Admin']);
 $router->post('/admin/users/search', 'AdminController@searchUsers', ['Auth', 'Admin']);
 $router->get('/admin/users/export', 'AdminController@exportUsers', ['Auth', 'Admin']);
+$router->post('/admin/users/send-photo-reminder', 'AdminController@sendPhotoReminder', ['Auth', 'Admin']);
 
 // ID Card routes (Admin only)
 $router->get('/admin/id-cards', 'IDCardController@index', ['Auth', 'Admin']);

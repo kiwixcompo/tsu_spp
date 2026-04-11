@@ -103,6 +103,16 @@ if (!function_exists('url')) {
                             </div>
 
                             <div class="row">
+                                <?php if (($registration_data['staff_type'] ?? 'teaching') === 'non-teaching'): ?>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Directorate / Faculty</label>
+                                    <div class="form-control-plaintext bg-light rounded p-2"><?= htmlspecialchars($registration_data['directorate'] ?? 'Not specified') ?></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Unit / Department</label>
+                                    <div class="form-control-plaintext bg-light rounded p-2"><?= htmlspecialchars($registration_data['directorate_unit'] ?? 'Not specified') ?></div>
+                                </div>
+                                <?php else: ?>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Faculty</label>
                                     <div class="form-control-plaintext bg-light rounded p-2"><?= htmlspecialchars($registration_data['faculty'] ?? 'Not specified') ?></div>
@@ -111,6 +121,7 @@ if (!function_exists('url')) {
                                     <label class="form-label">Department</label>
                                     <div class="form-control-plaintext bg-light rounded p-2"><?= htmlspecialchars($registration_data['department'] ?? 'Not specified') ?></div>
                                 </div>
+                                <?php endif; ?>
                             </div>
 
                             <div class="row">

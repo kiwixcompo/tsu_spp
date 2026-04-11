@@ -113,12 +113,13 @@ if (!function_exists('url')) {
                         $hasUnit = !empty($profile['unit']);
                         $hasFaculty = !empty($profile['faculty']);
                         $hasDepartment = !empty($profile['department']);
+                        $dirLabel = preg_replace('/^(Directorate of |Faculty of )/i', '', $profile['directorate'] ?? '');
                         ?>
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px; white-space: nowrap;">Staff ID:</td><td style="color: #111; font-weight: 600; vertical-align: top;"><?= htmlspecialchars($profile['staff_number'] ?? 'N/A') ?></td></tr>
                             <?php if ($isNonTeaching): ?>
                                 <?php if ($hasDirectorate): ?>
-                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px; white-space: nowrap;">Directorate:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.3;"><?= htmlspecialchars($profile['directorate']) ?></td></tr>
+                                <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px; white-space: nowrap;">Directorate:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.3;"><?= htmlspecialchars($dirLabel) ?></td></tr>
                                 <?php endif; ?>
                                 <?php if ($hasUnit): ?>
                                 <tr><td style="font-weight: 700; color: #1e40af; width: 55px; vertical-align: top; padding-bottom: 5px; white-space: nowrap;">Unit:</td><td style="color: #111; font-weight: 600; vertical-align: top; line-height: 1.3;"><?= htmlspecialchars($profile['unit']) ?></td></tr>
