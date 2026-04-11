@@ -288,30 +288,26 @@ SecurityHelper::setSecurityHeaders();
                             <div id="non-teaching-fields" class="field-group">
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Non-Teaching Staff:</strong> Select your Directorate, then choose your Unit within it.
+                                    <strong>Non-Teaching Staff:</strong> Select your Directorate or Faculty, then choose your Unit or Department within it.
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="directorate" class="form-label">Directorate *</label>
+                                    <label for="directorate" class="form-label">Directorate / Faculty *</label>
                                     <select class="form-select form-select-lg" id="directorate" name="directorate">
-                                        <option value="">Select your directorate</option>
+                                        <option value="">Select your directorate or faculty</option>
                                     </select>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="directorate_unit" class="form-label">Unit <span class="text-muted">(Optional)</span></label>
+                                    <label for="directorate_unit" class="form-label">Unit / Department *</label>
                                     <select class="form-select form-select-lg" id="directorate_unit" name="directorate_unit" disabled>
-                                        <option value="">Select directorate first</option>
+                                        <option value="">Select directorate/faculty first</option>
                                     </select>
-                                    <div class="form-text">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        Some directorates have a single unit — select it if applicable.
-                                    </div>
                                 </div>
 
                                 <div id="non-teaching-error" class="alert alert-danger" style="display:none;">
                                     <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Please select a Directorate.
+                                    Please select both a Directorate/Faculty and a Unit/Department.
                                 </div>
                             </div>
 
@@ -542,6 +538,11 @@ SecurityHelper::setSecurityHeaders();
                 if (!document.getElementById('directorate').value) {
                     document.getElementById('non-teaching-error').style.display = 'block';
                     alert('Please select a Directorate.');
+                    return;
+                }
+                if (!document.getElementById('directorate_unit').value) {
+                    document.getElementById('non-teaching-error').style.display = 'block';
+                    alert('Please select a Unit/Department.');
                     return;
                 }
                 document.getElementById('non-teaching-error').style.display = 'none';

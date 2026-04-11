@@ -224,19 +224,19 @@ if (!function_exists('escape_html')) {
 
                                 <div id="non_teaching_fields" style="display: none;">
                                     <div class="alert alert-info">
-                                        <i class="fas fa-info-circle me-2"></i>Select your <strong>Directorate</strong>, then choose your <strong>Unit</strong> within it.
+                                        <i class="fas fa-info-circle me-2"></i>Select your <strong>Directorate or Faculty</strong>, then choose your <strong>Unit or Department</strong> within it.
                                     </div>
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">Directorate *</label>
+                                            <label class="form-label">Directorate / Faculty *</label>
                                             <select class="form-select" id="directorate" name="directorate">
-                                                <option value="">Select Directorate</option>
+                                                <option value="">Select Directorate or Faculty</option>
                                             </select>
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">Unit <span class="text-muted">(Optional)</span></label>
+                                            <label class="form-label">Unit / Department *</label>
                                             <select class="form-select" id="directorate_unit" name="directorate_unit" disabled>
-                                                <option value="">Select directorate first</option>
+                                                <option value="">Select directorate/faculty first</option>
                                             </select>
                                         </div>
                                     </div>
@@ -396,8 +396,17 @@ if (!function_exists('escape_html')) {
                 formData.delete('directorate');
                 formData.delete('directorate_unit');
             } else {
-                formData.set('directorate', document.getElementById('directorate').value);
-                formData.set('directorate_unit', document.getElementById('directorate_unit').value);
+                const dir = document.getElementById('directorate').value;
+                const unit = document.getElementById('directorate_unit').value;
+                if (!dir || !unit) {
+                    const alertContainer = document.getElementById('alert-container');
+                    alertContainer.innerHTML = `<div class="alert alert-danger">Please select both a Directorate/Faculty and a Unit/Department.</div>`;
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Update Profile';
+                    return;
+                }
+                formData.set('directorate', dir);
+                formData.set('directorate_unit', unit);
                 formData.delete('faculty');
                 formData.delete('department');
             }

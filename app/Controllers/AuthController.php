@@ -93,15 +93,18 @@ class AuthController extends Controller
                 $errors['department'] = 'Department is required for teaching staff';
             }
         } else {
-            // Non-teaching staff: directorate is required, unit is optional
+            // Non-teaching staff: directorate and unit are both required
             $directorate = $this->sanitizeInput($this->input('directorate'));
             $directorateUnit = $this->sanitizeInput($this->input('directorate_unit'));
             $faculty = null;
             $department = null;
-            $unit = $directorateUnit ?: $directorate; // store unit or fall back to directorate name
+            $unit = $directorateUnit;
 
             if (empty($directorate)) {
-                $errors['staff_location'] = 'Please select a Directorate';
+                $errors['staff_location'] = 'Please select a Directorate or Faculty';
+            }
+            if (empty($directorateUnit)) {
+                $errors['staff_unit'] = 'Please select a Unit or Department';
             }
         }
 

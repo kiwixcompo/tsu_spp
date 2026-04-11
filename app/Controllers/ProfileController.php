@@ -420,8 +420,12 @@ class ProfileController extends Controller
         // Additional validation for non-teaching staff
         if ($staffType === 'non-teaching') {
             $directorate = $this->sanitizeInput($this->input('directorate'));
+            $directorateUnit = $this->sanitizeInput($this->input('directorate_unit'));
             if (empty($directorate)) {
-                $errors['staff_location'] = 'Please select a Directorate';
+                $errors['staff_location'] = 'Please select a Directorate or Faculty';
+            }
+            if (empty($directorateUnit)) {
+                $errors['staff_unit'] = 'Please select a Unit or Department';
             }
         }
 
