@@ -453,9 +453,16 @@ if (!function_exists('url')) {
                                     $profile['last_name'] ?? ''
                                 ]);
                                 $fullName = trim(implode(' ', $nameParts));
+                                // Drop middle name if full name is too long
+                                if (strlen($fullName) > 24 && !empty($profile['middle_name'])) {
+                                    $nameParts = array_filter([
+                                        $profile['title'] ?? '',
+                                        $profile['first_name'] ?? '',
+                                        $profile['last_name'] ?? ''
+                                    ]);
+                                    $fullName = trim(implode(' ', $nameParts));
+                                }
                                 $nameLength = strlen($fullName);
-                                
-                                // Determine name class based on length
                                 $nameClass = 'full-name';
                                 if ($nameLength > 30) {
                                     $nameClass .= ' name-extra-long';

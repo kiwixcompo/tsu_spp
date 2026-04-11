@@ -28,13 +28,20 @@ if (!function_exists('url')) {
         .main-content { margin-left: 220px; transition: all 0.3s ease; width: calc(100% - 220px); min-width: 0; }
         .main-content.expanded { margin-left: 60px; width: calc(100% - 60px); }
         /* Compact table */
-        .table th, .table td { font-size: 0.78rem; padding: 0.4rem 0.5rem; vertical-align: middle; white-space: nowrap; }
-        .table th { font-size: 0.75rem; }
+        .table th, .table td { font-size: 0.78rem; padding: 0.4rem 0.5rem; vertical-align: middle; }
+        .table th { font-size: 0.75rem; white-space: nowrap; }
+        /* Allow email to wrap so it doesn't blow out the table width */
+        .col-email { min-width: 140px; max-width: 200px; word-break: break-all; }
+        /* Fixed-width columns that must never wrap */
+        .col-staffid  { white-space: nowrap; width: 100px; }
+        .col-status   { white-space: nowrap; width: 80px; }
+        .col-idcard   { white-space: nowrap; width: 90px; }
+        .col-actions  { white-space: nowrap; width: 110px; }
+        .col-name     { min-width: 120px; }
+        .col-faculty  { min-width: 120px; }
         .btn-group-sm .btn { padding: 0.2rem 0.4rem; font-size: 0.75rem; }
         .badge { font-size: 0.7rem; }
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        /* Ensure Actions column is always visible */
-        .col-actions { min-width: 110px; }
         .preview-modal-dialog { max-width: 900px; }
         @media (max-width: 768px) { .admin-sidebar { width: 60px; } .admin-sidebar .sidebar-text { display: none; } .main-content { margin-left: 60px; width: calc(100% - 60px); } }
     </style>
@@ -150,12 +157,12 @@ if (!function_exists('url')) {
                                     <thead class="table-light">
                                         <tr>
                                             <th width="30"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
-                                            <th>Name</th>
-                                            <th>Staff ID</th>
-                                            <th>Email</th>
-                                            <th>Faculty/Unit</th>
-                                            <th>Status</th>
-                                            <th>ID Card</th>
+                                            <th class="col-name">Name</th>
+                                            <th class="col-staffid">Staff ID</th>
+                                            <th class="col-email">Email</th>
+                                            <th class="col-faculty">Faculty/Unit</th>
+                                            <th class="col-status">Status</th>
+                                            <th class="col-idcard">ID Card</th>
                                             <th class="col-actions">Actions</th>
                                         </tr>
                                     </thead>
@@ -170,10 +177,10 @@ if (!function_exists('url')) {
                                                             <input type="checkbox" class="user-checkbox" value="<?= $user['id'] ?>" onchange="updateBulkButtons()">
                                                         <?php endif; ?>
                                                     </td>
-                                                    <td><?= htmlspecialchars(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?></td>
-                                                    <td class="fw-bold text-primary"><?= htmlspecialchars($user['staff_number'] ?? '-') ?></td>
-                                                    <td><?= htmlspecialchars($user['email']) ?></td>
-                                                    <td>
+                                                    <td class="col-name"><?= htmlspecialchars(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?></td>
+                                                    <td class="col-staffid fw-bold text-primary"><?= htmlspecialchars($user['staff_number'] ?? '-') ?></td>
+                                                    <td class="col-email"><?= htmlspecialchars($user['email']) ?></td>
+                                                    <td class="col-faculty">
                                                         <?php 
                                                         if (!empty($user['unit'])) {
                                                             echo '<span class="badge bg-info">' . htmlspecialchars($user['unit']) . '</span>';
@@ -184,8 +191,8 @@ if (!function_exists('url')) {
                                                         }
                                                         ?>
                                                     </td>
-                                                    <td><span class="badge bg-<?= $user['account_status'] === 'active' ? 'success' : ($user['account_status'] === 'pending' ? 'warning' : 'danger') ?>"><?= ucfirst($user['account_status']) ?></span></td>
-                                                    <td>
+                                                    <td class="col-status"><span class="badge bg-<?= $user['account_status'] === 'active' ? 'success' : ($user['account_status'] === 'pending' ? 'warning' : 'danger') ?>"><?= ucfirst($user['account_status']) ?></span></td>
+                                                    <td class="col-idcard">
                                                         <?php if (!empty($user['id_card_generated'])): ?>
                                                             <span class="badge bg-success"><i class="fas fa-check me-1"></i>Printed</span>
                                                         <?php else: ?>
@@ -316,13 +323,13 @@ if (!function_exists('url')) {
                 return `
                 <tr class="user-row">
                     <td>${checkbox}</td>
-                    <td>${fullName}</td>
-                    <td class="fw-bold text-primary">${staffNumber}</td>
-                    <td>${email}</td>
-                    <td>${facultyUnit}</td>
-                    <td><span class="badge bg-${statusClass}">${statusText}</span></td>
-                    <td>${idBadge}</td>
-                    <td>
+                    <td class="col-name">${fullName}</td>
+                    <td class="col-staffid fw-bold text-primary">${staffNumber}</td>
+                    <td class="col-email">${email}</td>
+                    <td class="col-faculty">${facultyUnit}</td>
+                    <td class="col-status"><span class="badge bg-${statusClass}">${statusText}</span></td>
+                    <td class="col-idcard">${idBadge}</td>
+                    <td class="col-actions">
                         <div class="btn-group btn-group-sm">
                             <button class="btn btn-outline-primary" onclick="generateIDCard(${user.id})" title="ID Card"><i class="fas fa-id-card"></i></button>
                             <button class="btn btn-outline-success" onclick="activateUser(${user.id})" title="Activate"><i class="fas fa-check"></i></button>
@@ -482,7 +489,13 @@ if (!function_exists('url')) {
 
         function buildCardHtml(profile) {
             const staffId  = profile.staff_number || ('TSU-' + String(profile.id).padStart(5,'0'));
-            const fullName = [profile.title, profile.first_name, profile.last_name].filter(Boolean).join(' ');
+            const fullName = (() => {
+                const withMiddle = [profile.title, profile.first_name, profile.middle_name, profile.last_name].filter(Boolean).join(' ');
+                if (withMiddle.length > 24 && profile.middle_name) {
+                    return [profile.title, profile.first_name, profile.last_name].filter(Boolean).join(' ');
+                }
+                return withMiddle;
+            })();
             const photoUrl = profile.profile_photo_url || '';
             const qrUrl    = profile.qr_code_url || '';
             const logoUrl  = '<?= asset('assets/images/tsu-logo.png') ?>';

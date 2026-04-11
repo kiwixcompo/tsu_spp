@@ -89,16 +89,20 @@ if (!function_exists('url')) {
                             $profile['last_name'] ?? ''
                         ]);
                         $fullName = trim(implode(' ', $nameParts));
-                        $nameLength = strlen($fullName);
-                        
-                        $fontSize = '19px';
-                        if ($nameLength > 30) {
-                            $fontSize = '14px';
-                        } elseif ($nameLength > 25) {
-                            $fontSize = '15px';
-                        } elseif ($nameLength > 20) {
-                            $fontSize = '16px';
+                        // Drop middle name if too long
+                        if (strlen($fullName) > 24 && !empty($profile['middle_name'])) {
+                            $nameParts = array_filter([
+                                $profile['title'] ?? '',
+                                $profile['first_name'] ?? '',
+                                $profile['last_name'] ?? ''
+                            ]);
+                            $fullName = trim(implode(' ', $nameParts));
                         }
+                        $nameLength = strlen($fullName);
+                        $fontSize = '19px';
+                        if ($nameLength > 30) { $fontSize = '14px'; }
+                        elseif ($nameLength > 25) { $fontSize = '15px'; }
+                        elseif ($nameLength > 20) { $fontSize = '16px'; }
                         ?>
                         <h3 style="color: #1e3a8a; font-weight: 800; font-size: <?= $fontSize ?>; margin: 0; line-height: 1.1; word-wrap: break-word; word-break: break-word; hyphens: auto;">
                             <?= htmlspecialchars($fullName) ?>
