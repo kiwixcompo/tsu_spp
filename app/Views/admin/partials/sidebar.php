@@ -34,6 +34,9 @@ $currentPage = $currentPage ?? '';
         <a class="nav-link <?= $currentPage === 'units' ? 'active' : '' ?>" href="<?= url('/admin/units') ?>">
             <i class="fas fa-sitemap me-2"></i><span class="sidebar-text">Units & Offices</span>
         </a>
+        <a class="nav-link <?= $currentPage === 'directorates' ? 'active' : '' ?>" href="<?= url('/admin/directorates') ?>">
+            <i class="fas fa-university me-2"></i><span class="sidebar-text">Directorates & Units</span>
+        </a>
         <a class="nav-link <?= $currentPage === 'settings' ? 'active' : '' ?>" href="<?= url('/admin/settings') ?>">
             <i class="fas fa-cog me-2"></i><span class="sidebar-text">System Settings</span>
         </a>

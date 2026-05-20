@@ -115,6 +115,16 @@ $router->get('/admin/units', 'AdminController@unitsManagement', ['Auth', 'Admin'
 $router->post('/admin/units/add', 'AdminController@addUnit', ['Auth', 'Admin']);
 $router->post('/admin/units/update', 'AdminController@updateUnit', ['Auth', 'Admin']);
 $router->post('/admin/units/delete', 'AdminController@deleteUnit', ['Auth', 'Admin']);
+
+// Admin Directorates & Units routes for non-teaching staff
+$router->get('/admin/directorates', 'AdminController@directoratesManagement', ['Auth', 'Admin']);
+$router->post('/admin/directorates/add', 'AdminController@addDirectorate', ['Auth', 'Admin']);
+$router->post('/admin/directorates/update', 'AdminController@updateDirectorate', ['Auth', 'Admin']);
+$router->post('/admin/directorates/delete', 'AdminController@deleteDirectorate', ['Auth', 'Admin']);
+$router->post('/admin/directorates/unit-add', 'AdminController@addDirectorateUnit', ['Auth', 'Admin']);
+$router->post('/admin/directorates/unit-update', 'AdminController@updateDirectorateUnit', ['Auth', 'Admin']);
+$router->post('/admin/directorates/unit-delete', 'AdminController@deleteDirectorateUnit', ['Auth', 'Admin']);
+
 $router->get('/admin/settings', 'AdminController@settings', ['Auth', 'Admin']);
 $router->post('/admin/settings', 'AdminController@updateSettings', ['Auth', 'Admin']);
 $router->post('/admin/users/search', 'AdminController@searchUsers', ['Auth', 'Admin']);

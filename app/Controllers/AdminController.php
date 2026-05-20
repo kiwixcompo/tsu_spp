@@ -2092,4 +2092,315 @@ class AdminController extends Controller
             $this->json(['error' => 'Export failed: ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Directorates & Units Management Page (for Non-Teaching Staff)
+     */
+    public function directoratesManagement(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        try {
+            $directorates = $this->db->fetchAll("SELECT * FROM directorates ORDER BY display_order, name");
+            $units = $this->db->fetchAll("SELECT * FROM directorate_units ORDER BY display_order, unit_name");
+
+            $unitsByDirectorate = [];
+            foreach ($units as $unit) {
+                $dirId = (int)$unit['directorate_id'];
+                if (!isset($unitsByDirectorate[$dirId])) {
+                    $unitsByDirectorate[$dirId] = [];
+                }
+                $unitsByDirectorate[$dirId][] = $unit;
+            }
+
+            $directoratesList = [];
+            foreach ($directorates as $dir) {
+                $dirId = (int)$dir['id'];
+                $directoratesList[] = [
+                    'id' => $dirId,
+                    'name' => $dir['name'],
+                    'display_order' => (int)$dir['display_order'],
+                    'is_active' => (int)$dir['is_active'],
+                    'units' => $unitsByDirectorate[$dirId] ?? []
+                ];
+            }
+
+            $this->view('admin/directorates-management', [
+                'directorates' => $directoratesList,
+                'csrf_token' => $this->generateCSRFToken(),
+            ]);
+        } catch (\Exception $e) {
+            $this->view('admin/directorates-management', [
+                'directorates' => [],
+                'csrf_token' => $this->generateCSRFToken(),
+                'error' => 'Failed to load directorates: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Add a new Directorate
+     */
+    public function addDirectorate(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $name = $this->sanitizeInput($this->input('name'));
+        $displayOrder = (int)$this->input('display_order', 0);
+
+        if (empty($name)) {
+            $this->json(['error' => 'Directorate name is required'], 422);
+            return;
+        }
+
+        try {
+            // Check if name already exists
+            $exists = $this->db->fetch("SELECT id FROM directorates WHERE name = ? LIMIT 1", [$name]);
+            if ($exists) {
+                $this->json(['error' => 'Directorate with this name already exists'], 400);
+                return;
+            }
+
+            $this->db->insert('directorates', [
+                'name' => $name,
+                'display_order' => $displayOrder,
+                'is_active' => 1
+            ]);
+
+            $this->logActivity('directorate_added', ['name' => $name]);
+            $this->json(['success' => true, 'message' => 'Directorate added successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to add directorate: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update an existing Directorate
+     */
+    public function updateDirectorate(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $id = (int)$this->input('id');
+        $name = $this->sanitizeInput($this->input('name'));
+        $displayOrder = (int)$this->input('display_order', 0);
+        $isActive = (int)$this->input('is_active', 1);
+
+        if ($id <= 0 || empty($name)) {
+            $this->json(['error' => 'ID and name are required'], 422);
+            return;
+        }
+
+        try {
+            // Check if name already exists for another directorate
+            $exists = $this->db->fetch("SELECT id FROM directorates WHERE name = ? AND id != ? LIMIT 1", [$name, $id]);
+            if ($exists) {
+                $this->json(['error' => 'Directorate with this name already exists'], 400);
+                return;
+            }
+
+            $this->db->update('directorates', [
+                'name' => $name,
+                'display_order' => $displayOrder,
+                'is_active' => $isActive
+            ], 'id = ?', [$id]);
+
+            $this->logActivity('directorate_updated', ['id' => $id, 'name' => $name, 'is_active' => $isActive]);
+            $this->json(['success' => true, 'message' => 'Directorate updated successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to update directorate: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Delete a Directorate
+     */
+    public function deleteDirectorate(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $id = (int)$this->input('id');
+
+        if ($id <= 0) {
+            $this->json(['error' => 'Invalid directorate ID'], 422);
+            return;
+        }
+
+        try {
+            $directorate = $this->db->fetch("SELECT name FROM directorates WHERE id = ?", [$id]);
+            if (!$directorate) {
+                $this->json(['error' => 'Directorate not found'], 404);
+                return;
+            }
+
+            // Perform deletion (cascades to directorate_units on DB level)
+            $this->db->delete('directorates', 'id = ?', [$id]);
+
+            $this->logActivity('directorate_deleted', ['id' => $id, 'name' => $directorate['name']]);
+            $this->json(['success' => true, 'message' => 'Directorate deleted successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to delete directorate: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Add a Unit to a Directorate
+     */
+    public function addDirectorateUnit(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $directorateId = (int)$this->input('directorate_id');
+        $unitName = $this->sanitizeInput($this->input('unit_name'));
+        $displayOrder = (int)$this->input('display_order', 0);
+
+        if ($directorateId <= 0 || empty($unitName)) {
+            $this->json(['error' => 'Directorate and Unit name are required'], 422);
+            return;
+        }
+
+        try {
+            // Check if unit already exists in this directorate
+            $exists = $this->db->fetch(
+                "SELECT id FROM directorate_units WHERE directorate_id = ? AND unit_name = ? LIMIT 1",
+                [$directorateId, $unitName]
+            );
+            if ($exists) {
+                $this->json(['error' => 'This unit already exists in the selected directorate'], 400);
+                return;
+            }
+
+            $this->db->insert('directorate_units', [
+                'directorate_id' => $directorateId,
+                'unit_name' => $unitName,
+                'display_order' => $displayOrder,
+                'is_active' => 1
+            ]);
+
+            $this->logActivity('directorate_unit_added', ['directorate_id' => $directorateId, 'unit_name' => $unitName]);
+            $this->json(['success' => true, 'message' => 'Unit added successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to add unit: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update an existing Directorate Unit
+     */
+    public function updateDirectorateUnit(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $id = (int)$this->input('id');
+        $directorateId = (int)$this->input('directorate_id');
+        $unitName = $this->sanitizeInput($this->input('unit_name'));
+        $displayOrder = (int)$this->input('display_order', 0);
+        $isActive = (int)$this->input('is_active', 1);
+
+        if ($id <= 0 || $directorateId <= 0 || empty($unitName)) {
+            $this->json(['error' => 'Invalid unit data'], 422);
+            return;
+        }
+
+        try {
+            // Check if unit already exists in this directorate for another unit
+            $exists = $this->db->fetch(
+                "SELECT id FROM directorate_units WHERE directorate_id = ? AND unit_name = ? AND id != ? LIMIT 1",
+                [$directorateId, $unitName, $id]
+            );
+            if ($exists) {
+                $this->json(['error' => 'This unit already exists in the selected directorate'], 400);
+                return;
+            }
+
+            $this->db->update('directorate_units', [
+                'directorate_id' => $directorateId,
+                'unit_name' => $unitName,
+                'display_order' => $displayOrder,
+                'is_active' => $isActive
+            ], 'id = ?', [$id]);
+
+            $this->logActivity('directorate_unit_updated', [
+                'id' => $id,
+                'directorate_id' => $directorateId,
+                'unit_name' => $unitName,
+                'is_active' => $isActive
+            ]);
+            $this->json(['success' => true, 'message' => 'Unit updated successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to update unit: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Delete a Directorate Unit
+     */
+    public function deleteDirectorateUnit(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $id = (int)$this->input('id');
+
+        if ($id <= 0) {
+            $this->json(['error' => 'Invalid unit ID'], 422);
+            return;
+        }
+
+        try {
+            $unit = $this->db->fetch("SELECT unit_name, directorate_id FROM directorate_units WHERE id = ?", [$id]);
+            if (!$unit) {
+                $this->json(['error' => 'Unit not found'], 404);
+                return;
+            }
+
+            $this->db->delete('directorate_units', 'id = ?', [$id]);
+
+            $this->logActivity('directorate_unit_deleted', [
+                'id' => $id,
+                'unit_name' => $unit['unit_name'],
+                'directorate_id' => $unit['directorate_id']
+            ]);
+            $this->json(['success' => true, 'message' => 'Unit deleted successfully']);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Failed to delete unit: ' . $e->getMessage()], 500);
+        }
+    }
 }
+
