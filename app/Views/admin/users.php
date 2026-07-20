@@ -76,7 +76,7 @@ if (!function_exists('url')) {
                                 <button class="btn btn-warning" onclick="bulkSuspend()" id="bulkSuspendBtn" disabled><i class="fas fa-ban me-2"></i>Suspend</button>
                                 <button class="btn btn-danger" onclick="bulkDelete()" id="bulkDeleteBtn" disabled><i class="fas fa-trash me-2"></i>Delete</button>
                                 <button class="btn btn-secondary" onclick="bulkSendPhotoReminder()" id="bulkPhotoReminderBtn" disabled title="Send photo update reminder email"><i class="fas fa-camera me-2"></i>Send Photo Reminder</button>
-                                <button class="btn btn-outline-warning" onclick="bulkSendProfileReminder()" id="bulkProfileReminderBtn" disabled title="Send profile completion reminder"><i class="fas fa-user-edit me-2"></i>Send Profile Reminder</button>
+                                <button class="btn btn-outline-warning" onclick="bulkSendProfileReminder()" id="bulkProfileReminderBtn" disabled title="Send smart emails detailing exactly what data is missing"><i class="fas fa-magic me-2"></i>Send Smart Missing Data Email</button>
                                 <button class="btn btn-outline-success" onclick="exportToExcel()"><i class="fas fa-file-excel me-2"></i>Export to Excel</button>
                                 <span class="badge bg-secondary align-self-center ms-2 fs-6"><span id="selectedCount">0</span> selected</span>
                             </div>
