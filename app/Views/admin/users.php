@@ -65,7 +65,7 @@ if (!function_exists('url')) {
                     <div class="card mb-3">
                         <div class="card-body">
                             <div class="d-flex gap-2 flex-wrap mb-3">
-                                <button class="btn btn-outline-primary fw-bold" onclick="loadReadyForIDCard()"><i class="fas fa-id-badge me-2"></i>Ready for ID Card</button>
+                                <button class="btn btn-outline-primary fw-bold" onclick="loadReadyForIDCard()"><i class="fas fa-id-badge me-2"></i>Ready for Printing</button>
                                 <button class="btn btn-outline-danger fw-bold" onclick="loadIncompleteData()"><i class="fas fa-user-times me-2"></i>Incomplete Data (Unsent Emails)</button>
                                 <button class="btn btn-outline-secondary fw-bold" onclick="clearFilters()"><i class="fas fa-times me-2"></i>Clear Filters</button>
                             </div>
@@ -330,7 +330,7 @@ if (!function_exists('url')) {
             fetch('<?= url('/admin/users/search') ?>', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrfToken },
-                body: params
+                body: params.toString()
             })
             .then(r => r.json())
             .then(data => {
