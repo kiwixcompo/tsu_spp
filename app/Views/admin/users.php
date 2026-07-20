@@ -515,20 +515,25 @@ if (!function_exists('url')) {
         // ── Single actions ───────────────────────────────────────────────────
         
         function loadReadyForIDCard() {
-            clearFilters();
+            resetFilterInputs();
             document.getElementById('idCardFilter').value = 'not_printed';
             document.getElementById('dataCompletenessFilter').value = 'ready';
             performSearch(1);
         }
 
         function loadIncompleteData() {
-            clearFilters();
+            resetFilterInputs();
             document.getElementById('dataCompletenessFilter').value = 'incomplete';
             document.getElementById('reminderStatusFilter').value = 'unsent';
             performSearch(1);
         }
 
         function clearFilters() {
+            resetFilterInputs();
+            performSearch(1);
+        }
+        
+        function resetFilterInputs() {
             document.getElementById('userSearch').value = '';
             document.getElementById('staffTypeFilter').value = '';
             document.getElementById('genderFilter').value = '';
@@ -538,7 +543,6 @@ if (!function_exists('url')) {
             document.getElementById('noPhotoFilter').value = '';
             document.getElementById('dataCompletenessFilter').value = '';
             document.getElementById('reminderStatusFilter').value = '';
-            performSearch(1);
         }
         
         let pwModalUserId = null;
