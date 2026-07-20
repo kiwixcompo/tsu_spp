@@ -184,6 +184,7 @@ if (!function_exists('url')) {
                                                     <td class="col-actions">
                                                         <div class="btn-group btn-group-sm">
                                                             <button class="btn btn-outline-primary" onclick="generateIDCard(<?= $user['id'] ?>)" title="Generate ID"><i class="fas fa-id-card"></i></button>
+                                                            <button class="btn btn-outline-warning" onclick="openPasswordModal(<?= $user['id'] ?>, '<?= htmlspecialchars($user['email'], ENT_QUOTES) ?>', <?= $user['email_verified'] ? 1 : 0 ?>)" title="Password Options"><i class="fas fa-key"></i></button>
                                                             <button class="btn btn-outline-success" onclick="activateUser(<?= $user['id'] ?>)" title="Activate"><i class="fas fa-check"></i></button>
                                                             <button class="btn btn-outline-danger" onclick="deleteUser(<?= $user['id'] ?>)" title="Delete"><i class="fas fa-trash"></i></button>
                                                         </div>
@@ -217,6 +218,42 @@ if (!function_exists('url')) {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" id="downloadAllBtn" onclick="downloadAllPDFs()"><i class="fas fa-download me-2"></i>Download All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Options Modal -->
+    <div class="modal fade" id="passwordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-key me-2 text-warning"></i>Password Options</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="mb-4">Options for <strong id="pwModalEmail" class="text-primary"></strong></p>
+                    
+                    <h6 class="mb-2 fw-bold text-dark">1. Send Password Reset Link</h6>
+                    <p class="small text-muted mb-3">Send an email with a secure link allowing the user to reset their password themselves.</p>
+                    <button class="btn btn-outline-primary w-100 mb-3" id="btnSendResetLink" onclick="sendResetLink()">
+                        <i class="fas fa-envelope me-2"></i>Send Reset Link
+                    </button>
+                    <div id="unverifiedEmailAlert" class="alert alert-warning py-2 px-3 small" style="display:none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>User email is not verified. Reset links can only be sent to verified emails.
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-2 fw-bold text-dark">2. Change Password Directly</h6>
+                    <p class="small text-muted mb-3">Manually set a new password for this user immediately.</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="newDirectPassword" placeholder="Enter new password">
+                        <button class="btn btn-outline-secondary" type="button" onclick="generateRandomPassword()" title="Generate Random Password"><i class="fas fa-random"></i></button>
+                    </div>
+                    <button class="btn btn-warning w-100 fw-bold" id="btnChangePassword" onclick="changePasswordDirectly()">
+                        <i class="fas fa-save me-2"></i>Update Password
+                    </button>
                 </div>
             </div>
         </div>
@@ -314,6 +351,7 @@ if (!function_exists('url')) {
                     <td class="col-actions">
                         <div class="btn-group btn-group-sm">
                             <button class="btn btn-outline-primary" onclick="generateIDCard(${user.id})" title="ID Card"><i class="fas fa-id-card"></i></button>
+                            <button class="btn btn-outline-warning" onclick="openPasswordModal(${user.id}, '${escapeHtml(user.email)}', parseInt(${user.email_verified}) === 1 ? 1 : 0)" title="Password Options"><i class="fas fa-key"></i></button>
                             <button class="btn btn-outline-success" onclick="activateUser(${user.id})" title="Activate"><i class="fas fa-check"></i></button>
                             <button class="btn btn-outline-danger"  onclick="deleteUser(${user.id})"   title="Delete"><i class="fas fa-trash"></i></button>
                         </div>
@@ -446,6 +484,95 @@ if (!function_exists('url')) {
         }
 
         // ── Single actions ───────────────────────────────────────────────────
+        
+        let pwModalUserId = null;
+        let pwModalUserEmail = null;
+        
+        function openPasswordModal(id, email, isVerified) {
+            pwModalUserId = id;
+            pwModalUserEmail = email;
+            document.getElementById('pwModalEmail').textContent = email;
+            document.getElementById('newDirectPassword').value = '';
+            
+            const btnSend = document.getElementById('btnSendResetLink');
+            const alertUnverified = document.getElementById('unverifiedEmailAlert');
+            
+            if (isVerified) {
+                btnSend.disabled = false;
+                alertUnverified.style.display = 'none';
+            } else {
+                btnSend.disabled = true;
+                alertUnverified.style.display = 'block';
+            }
+            
+            new bootstrap.Modal(document.getElementById('passwordModal')).show();
+        }
+
+        function generateRandomPassword() {
+            const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+            let pass = "";
+            for (let i = 0; i < 12; i++) {
+                pass += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('newDirectPassword').value = pass;
+        }
+
+        async function sendResetLink() {
+            const btn = document.getElementById('btnSendResetLink');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
+            
+            try {
+                const r = await fetch('<?= url('admin/send-password-reset-link') ?>', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, 
+                    body: JSON.stringify({ user_id: pwModalUserId }) 
+                });
+                const data = await r.json();
+                if (data.success) { 
+                    alert(data.message || 'Success'); 
+                    bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
+                } else { 
+                    alert('Error: ' + (data.error || 'Action failed')); 
+                }
+            } catch (e) { alert('Network request failed'); }
+            finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-envelope me-2"></i>Send Reset Link';
+            }
+        }
+
+        async function changePasswordDirectly() {
+            const newPassword = document.getElementById('newDirectPassword').value;
+            if (!newPassword) {
+                alert('Please enter a new password');
+                return;
+            }
+            if (!confirm(`Are you sure you want to change the password for ${pwModalUserEmail}?`)) return;
+
+            const btn = document.getElementById('btnChangePassword');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+
+            try {
+                const r = await fetch('<?= url('admin/reset-user-password') ?>', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, 
+                    body: JSON.stringify({ user_id: pwModalUserId, new_password: newPassword }) 
+                });
+                const data = await r.json();
+                if (data.success) { 
+                    alert(data.message || 'Success'); 
+                    bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
+                } else { 
+                    alert('Error: ' + (data.error || 'Action failed')); 
+                }
+            } catch (e) { alert('Network request failed'); }
+            finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>Update Password';
+            }
+        }
         function deleteUser(id)    { performAction('<?= url('admin/delete-user') ?>',   { user_id: id }, 'Delete this user?'); }
         function activateUser(id)  { performAction('<?= url('admin/activate-user') ?>', { user_id: id }, 'Activate this user?'); }
         function generateIDCard(id){ window.open('<?= url('admin/id-cards/preview') ?>/' + id, '_blank'); }

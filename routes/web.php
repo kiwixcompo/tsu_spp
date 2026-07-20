@@ -99,6 +99,8 @@ $router->post('/admin/activate-user', 'AdminController@activateUser', ['Auth', '
 $router->post('/admin/suspend-user', 'AdminController@suspendUser', ['Auth', 'Admin']);
 $router->post('/admin/reinstate-user', 'AdminController@reinstateUser', ['Auth', 'Admin']);
 $router->post('/admin/verify-user', 'AdminController@verifyUser', ['Auth', 'Admin']);
+$router->post('/admin/reset-user-password', 'AdminController@resetUserPassword', ['Auth', 'Admin']);
+$router->post('/admin/send-password-reset-link', 'AdminController@sendPasswordResetLink', ['Auth', 'Admin']);
 $router->post('/admin/delete-user', 'AdminController@deleteUser', ['Auth', 'Admin']);
 $router->post('/admin/bulk-delete-users', 'AdminController@bulkDeleteUsers', ['Auth', 'Admin']);
 $router->post('/admin/bulk-suspend-users', 'AdminController@bulkSuspendUsers', ['Auth', 'Admin']);

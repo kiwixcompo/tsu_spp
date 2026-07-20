@@ -690,6 +690,99 @@ class AdminController extends Controller
     }
 
     /**
+     * Reset user password directly
+     */
+    public function resetUserPassword(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $userId = $this->input('user_id');
+        $newPassword = $this->input('new_password');
+        
+        if (!$userId || !$newPassword) {
+            $this->json(['error' => 'User ID and new password are required'], 400);
+            return;
+        }
+
+        try {
+            $user = $this->userModel->findById($userId);
+            if (!$user) {
+                $this->json(['error' => 'User not found'], 404);
+                return;
+            }
+
+            // Hash new password
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+            $this->db->query("UPDATE users SET password = ? WHERE id = ?", [$hashedPassword, $userId]);
+
+            $this->logActivity('admin_reset_user_password', ['user_id' => $userId, 'email' => $user['email']]);
+
+            $this->json(['success' => true, 'message' => 'Password has been successfully updated']);
+        } catch (\Exception $e) {
+            error_log("Error resetting password for user ID {$userId}: " . $e->getMessage());
+            $this->json(['error' => 'An error occurred while resetting the password'], 500);
+        }
+    }
+
+    /**
+     * Send password reset link to user
+     */
+    public function sendPasswordResetLink(): void
+    {
+        $this->requireAuth();
+        $this->requireAdmin();
+
+        if (!$this->verifyCSRFToken()) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $userId = $this->input('user_id');
+        if (!$userId) {
+            $this->json(['error' => 'User ID required'], 400);
+            return;
+        }
+
+        try {
+            $user = $this->userModel->findById($userId);
+            if (!$user) {
+                $this->json(['error' => 'User not found'], 404);
+                return;
+            }
+            
+            if (!$user['email_verified']) {
+                $this->json(['error' => 'User email is not verified. Reset links can only be sent to verified emails.'], 400);
+                return;
+            }
+
+            $emailHelper = new \App\Helpers\EmailHelper();
+            
+            $resetToken = bin2hex(random_bytes(32));
+            $resetExpires = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+            $this->userModel->setPasswordResetToken($user['id'], $resetToken, $resetExpires);
+            
+            $emailResult = $emailHelper->sendPasswordResetEmail($user['email'], $resetToken);
+            
+            if ($emailResult) {
+                $this->logActivity('admin_sent_password_reset_link', ['user_id' => $userId, 'email' => $user['email']]);
+                $this->json(['success' => true, 'message' => 'Password reset link sent successfully to ' . htmlspecialchars($user['email'])]);
+            } else {
+                $this->json(['error' => 'Failed to send password reset email. Check mail server configuration.'], 500);
+            }
+        } catch (\Exception $e) {
+            error_log("Error sending password reset link for user ID {$userId}: " . $e->getMessage());
+            $this->json(['error' => 'An error occurred while sending the reset link'], 500);
+        }
+    }
+
+    /**
      * Delete user
      */
     public function deleteUser(): void
