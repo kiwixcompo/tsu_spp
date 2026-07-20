@@ -65,6 +65,11 @@ if (!function_exists('url')) {
                     <div class="card mb-3">
                         <div class="card-body">
                             <div class="d-flex gap-2 flex-wrap mb-3">
+                                <button class="btn btn-outline-primary fw-bold" onclick="loadReadyForIDCard()"><i class="fas fa-id-badge me-2"></i>Ready for ID Card</button>
+                                <button class="btn btn-outline-danger fw-bold" onclick="loadIncompleteData()"><i class="fas fa-user-times me-2"></i>Incomplete Data (Unsent Emails)</button>
+                                <button class="btn btn-outline-secondary fw-bold" onclick="clearFilters()"><i class="fas fa-times me-2"></i>Clear Filters</button>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap mb-3 border-top pt-3">
                                 <button class="btn btn-primary" onclick="bulkGenerateIDCards()" id="bulkIDCardBtn" disabled><i class="fas fa-id-card me-2"></i>Generate ID Cards</button>
                                 <button class="btn btn-info" onclick="bulkVerify()" id="bulkVerifyBtn" disabled><i class="fas fa-envelope-circle-check me-2"></i>Verify</button>
                                 <button class="btn btn-success" onclick="bulkActivate()" id="bulkActivateBtn" disabled><i class="fas fa-check me-2"></i>Activate</button>
@@ -124,6 +129,20 @@ if (!function_exists('url')) {
                                         <option value="0">Photo Uploaded</option>
                                     </select>
                                 </div>
+                                <div class="col-md-2 mt-2 mt-md-0">
+                                    <select id="dataCompletenessFilter" class="form-select" onchange="performSearch()">
+                                        <option value="">Data Completeness</option>
+                                        <option value="ready">Ready for ID Card</option>
+                                        <option value="incomplete">Incomplete Data</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mt-2 mt-md-0">
+                                    <select id="reminderStatusFilter" class="form-select" onchange="performSearch()">
+                                        <option value="">Reminder Status</option>
+                                        <option value="sent">Reminder Sent</option>
+                                        <option value="unsent">Reminder Unsent</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -159,7 +178,12 @@ if (!function_exists('url')) {
                                                             <input type="checkbox" class="user-checkbox" value="<?= $user['id'] ?>" onchange="updateBulkButtons()">
                                                         <?php endif; ?>
                                                     </td>
-                                                    <td class="col-name"><?= htmlspecialchars(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?></td>
+                                                    <td class="col-name">
+                                                        <?= htmlspecialchars(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?>
+                                                        <?php if (!empty($user['profile_reminder_sent_at'])): ?>
+                                                            <i class="fas fa-envelope text-warning ms-1" title="Reminder sent on <?= htmlspecialchars(date('M d, Y', strtotime($user['profile_reminder_sent_at']))) ?>"></i>
+                                                        <?php endif; ?>
+                                                    </td>
                                                     <td class="col-staffid fw-bold text-primary"><?= htmlspecialchars($user['staff_number'] ?? '-') ?></td>
                                                     <td class="col-email"><?= htmlspecialchars($user['email']) ?></td>
                                                     <td class="col-faculty">
@@ -298,6 +322,8 @@ if (!function_exists('url')) {
                 unit:           document.getElementById('unitFilter').value,
                 id_card_filter: document.getElementById('idCardFilter').value,
                 no_photo:       document.getElementById('noPhotoFilter').value,
+                data_completeness: document.getElementById('dataCompletenessFilter').value,
+                reminder_status:   document.getElementById('reminderStatusFilter').value,
                 page
             });
 
@@ -339,10 +365,13 @@ if (!function_exists('url')) {
                 const checkbox    = user.role !== 'admin'
                     ? `<input type="checkbox" class="user-checkbox" value="${user.id}" onchange="updateBulkButtons()">`
                     : '';
+                const reminderIcon = user.profile_reminder_sent_at 
+                    ? `<i class="fas fa-envelope text-warning ms-1" title="Reminder sent on ${user.profile_reminder_sent_at}"></i>` 
+                    : '';
                 return `
                 <tr class="user-row">
                     <td>${checkbox}</td>
-                    <td class="col-name">${fullName}</td>
+                    <td class="col-name">${fullName}${reminderIcon}</td>
                     <td class="col-staffid fw-bold text-primary">${staffNumber}</td>
                     <td class="col-email">${email}</td>
                     <td class="col-faculty">${facultyUnit}</td>
@@ -484,6 +513,33 @@ if (!function_exists('url')) {
         }
 
         // ── Single actions ───────────────────────────────────────────────────
+        
+        function loadReadyForIDCard() {
+            clearFilters();
+            document.getElementById('idCardFilter').value = 'not_printed';
+            document.getElementById('dataCompletenessFilter').value = 'ready';
+            performSearch(1);
+        }
+
+        function loadIncompleteData() {
+            clearFilters();
+            document.getElementById('dataCompletenessFilter').value = 'incomplete';
+            document.getElementById('reminderStatusFilter').value = 'unsent';
+            performSearch(1);
+        }
+
+        function clearFilters() {
+            document.getElementById('userSearch').value = '';
+            document.getElementById('staffTypeFilter').value = '';
+            document.getElementById('genderFilter').value = '';
+            document.getElementById('facultyFilter').value = '';
+            document.getElementById('unitFilter').value = '';
+            document.getElementById('idCardFilter').value = '';
+            document.getElementById('noPhotoFilter').value = '';
+            document.getElementById('dataCompletenessFilter').value = '';
+            document.getElementById('reminderStatusFilter').value = '';
+            performSearch(1);
+        }
         
         let pwModalUserId = null;
         let pwModalUserEmail = null;

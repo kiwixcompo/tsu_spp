@@ -20,7 +20,16 @@ function getBaseUrl(): string
     }
     
     // Local development
-    return $protocol . '://' . $host . '/public';
+    $scriptPath = dirname($_SERVER['SCRIPT_NAME']); // e.g., /tsu_spp/public
+    $scriptPath = str_replace('\\', '/', $scriptPath); // Normalize slashes for Windows
+    
+    // If the path ends in /public and we are rewriting to it, we can either keep it or strip it.
+    // To match what the user is experiencing, we'll keep the dynamically derived path which preserves the 'tsu_spp' folder.
+    // However, if we want clean URLs (http://localhost/tsu_spp/admin), we can strip /public.
+    // The previous hardcoded string was '/public', which wiped out the local folder. 
+    // Just using the actual script directory ensures it adapts to whatever folder WAMP uses.
+    
+    return $protocol . '://' . $host . $scriptPath;
 }
 
 /**

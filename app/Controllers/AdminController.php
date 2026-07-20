@@ -1626,6 +1626,8 @@ class AdminController extends Controller
         $unit = $this->sanitizeInput($this->input('unit') ?? '');
         $idCardFilter = $this->sanitizeInput($this->input('id_card_filter') ?? ''); // 'printed' | 'not_printed'
         $noPhoto = $this->sanitizeInput($this->input('no_photo') ?? '');            // '1' = no photo only
+        $dataCompleteness = $this->sanitizeInput($this->input('data_completeness') ?? '');
+        $reminderStatus = $this->sanitizeInput($this->input('reminder_status') ?? '');
         $page = (int)($this->input('page') ?: 1);
         $limit = 20;
         $offset = ($page - 1) * $limit;
@@ -1655,6 +1657,18 @@ class AdminController extends Controller
             } elseif ($noPhoto === '0') {
                 $conditions[] = "(p.profile_photo IS NOT NULL AND p.profile_photo != '')";
             }
+            
+            if ($dataCompleteness === 'ready') {
+                $conditions[] = "(p.profile_photo IS NOT NULL AND p.profile_photo != '' AND p.designation IS NOT NULL AND p.designation != '' AND p.blood_group IS NOT NULL AND p.blood_group != '' AND p.gender IS NOT NULL AND p.gender != '' AND ((p.faculty IS NOT NULL AND p.faculty != '') OR (p.directorate IS NOT NULL AND p.directorate != '')))";
+            } elseif ($dataCompleteness === 'incomplete') {
+                $conditions[] = "(p.profile_photo IS NULL OR p.profile_photo = '' OR p.designation IS NULL OR p.designation = '' OR p.blood_group IS NULL OR p.blood_group = '' OR p.gender IS NULL OR p.gender = '' OR ((p.faculty IS NULL OR p.faculty = '') AND (p.directorate IS NULL OR p.directorate = '')))";
+            }
+            
+            if ($reminderStatus === 'sent') {
+                $conditions[] = "p.profile_reminder_sent_at IS NOT NULL";
+            } elseif ($reminderStatus === 'unsent') {
+                $conditions[] = "p.profile_reminder_sent_at IS NULL";
+            }
 
             $whereClause = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
 
@@ -1674,7 +1688,8 @@ class AdminController extends Controller
                        p.designation, p.staff_number, p.profile_slug, p.staff_type, p.gender,
                        p.profile_photo,
                        COALESCE(p.id_card_generated, 0) as id_card_generated,
-                       p.id_card_generated_at
+                       p.id_card_generated_at,
+                       p.profile_reminder_sent_at
                 FROM users u
                 LEFT JOIN profiles p ON u.id = p.user_id
                 $whereClause
@@ -1940,6 +1955,7 @@ class AdminController extends Controller
 
                 try {
                     $emailHelper->sendRawEmail($user['email'], $subject, $body);
+                    $this->db->query("UPDATE profiles SET profile_reminder_sent_at = NOW() WHERE user_id = ?", [$userId]);
                     $sent++;
                 } catch (\Exception $e) {
                     error_log("Profile reminder failed for {$user['email']}: " . $e->getMessage());
