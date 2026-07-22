@@ -226,6 +226,7 @@ try {
         echo '</div>';
         echo '</body></html>';
     } else {
+        error_log("Unhandled Exception: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
         http_response_code(500);
         echo '<!DOCTYPE html><html><head><title>Error</title></head><body>';
         echo '<h1>Internal Server Error</h1>';

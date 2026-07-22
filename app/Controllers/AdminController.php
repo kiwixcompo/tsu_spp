@@ -319,7 +319,7 @@ class AdminController extends Controller
         try {
             return $this->db->fetchAll("
                 SELECT u.id, u.email, u.account_status, u.email_verified, u.created_at, u.last_login, u.role,
-                       p.first_name, p.last_name, p.faculty, p.department, p.unit, p.directorate,
+                       p.first_name, p.last_name, p.faculty, p.department, p.unit,
                        p.designation, p.staff_number, p.profile_slug, p.staff_type, p.gender, p.profile_photo,
                        COALESCE(p.id_card_generated, 0) as id_card_generated,
                        p.id_card_generated_at
@@ -1643,7 +1643,7 @@ class AdminController extends Controller
             }
             if (!empty($staffType)) { $conditions[] = "p.staff_type = ?"; $params[] = $staffType; }
             if (!empty($gender))    { $conditions[] = "p.gender = ?";     $params[] = $gender; }
-            if (!empty($faculty))   { $conditions[] = "(p.faculty = ? OR p.directorate = ?)"; $params[] = $faculty; $params[] = $faculty; }
+            if (!empty($faculty))   { $conditions[] = "p.faculty = ?"; $params[] = $faculty; }
             if (!empty($unit))      { $conditions[] = "p.unit = ?";       $params[] = $unit; }
 
             if ($idCardFilter === 'printed') {
@@ -1659,9 +1659,9 @@ class AdminController extends Controller
             }
             
             if ($dataCompleteness === 'ready') {
-                $conditions[] = "(p.profile_photo IS NOT NULL AND p.profile_photo != '' AND p.designation IS NOT NULL AND p.designation != '' AND p.blood_group IS NOT NULL AND p.blood_group != '' AND p.gender IS NOT NULL AND p.gender != '' AND ((p.faculty IS NOT NULL AND p.faculty != '') OR (p.directorate IS NOT NULL AND p.directorate != '')))";
+                $conditions[] = "(p.profile_photo IS NOT NULL AND p.profile_photo != '' AND p.designation IS NOT NULL AND p.designation != '' AND p.blood_group IS NOT NULL AND p.blood_group != '' AND p.gender IS NOT NULL AND p.gender != '' AND (p.faculty IS NOT NULL AND p.faculty != ''))";
             } elseif ($dataCompleteness === 'incomplete') {
-                $conditions[] = "(p.profile_photo IS NULL OR p.profile_photo = '' OR p.designation IS NULL OR p.designation = '' OR p.blood_group IS NULL OR p.blood_group = '' OR p.gender IS NULL OR p.gender = '' OR ((p.faculty IS NULL OR p.faculty = '') AND (p.directorate IS NULL OR p.directorate = '')))";
+                $conditions[] = "(p.profile_photo IS NULL OR p.profile_photo = '' OR p.designation IS NULL OR p.designation = '' OR p.blood_group IS NULL OR p.blood_group = '' OR p.gender IS NULL OR p.gender = '' OR (p.faculty IS NULL OR p.faculty = ''))";
             }
             
             if ($reminderStatus === 'sent') {
@@ -1684,7 +1684,7 @@ class AdminController extends Controller
 
             $users = $this->db->fetchAll("
                 SELECT u.id, u.email, u.account_status, u.email_verified, u.created_at, u.last_login, u.role,
-                       p.first_name, p.last_name, p.faculty, p.department, p.unit, p.directorate,
+                       p.first_name, p.last_name, p.faculty, p.department, p.unit,
                        p.designation, p.staff_number, p.profile_slug, p.staff_type, p.gender,
                        p.profile_photo,
                        COALESCE(p.id_card_generated, 0) as id_card_generated,
@@ -1882,7 +1882,7 @@ class AdminController extends Controller
                         p.first_name, p.last_name,
                         p.profile_photo, p.professional_summary,
                         p.designation, p.blood_group, p.gender,
-                        p.faculty, p.department, p.directorate, p.unit
+                        p.faculty, p.department, p.unit
                  FROM users u
                  LEFT JOIN profiles p ON u.id = p.user_id
                  WHERE u.id IN ($placeholders)",
@@ -2085,8 +2085,7 @@ class AdminController extends Controller
             }
 
             if (!empty($faculty)) {
-                $conditions[] = "(p.faculty = ? OR p.directorate = ?)";
-                $params[] = $faculty;
+                $conditions[] = "p.faculty = ?";
                 $params[] = $faculty;
             }
 
