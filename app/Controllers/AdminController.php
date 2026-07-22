@@ -1662,6 +1662,8 @@ class AdminController extends Controller
                 $conditions[] = "(p.profile_photo IS NOT NULL AND p.profile_photo != '' AND p.designation IS NOT NULL AND p.designation != '' AND p.blood_group IS NOT NULL AND p.blood_group != '' AND p.gender IS NOT NULL AND p.gender != '' AND (p.faculty IS NOT NULL AND p.faculty != ''))";
             } elseif ($dataCompleteness === 'incomplete') {
                 $conditions[] = "(p.profile_photo IS NULL OR p.profile_photo = '' OR p.designation IS NULL OR p.designation = '' OR p.blood_group IS NULL OR p.blood_group = '' OR p.gender IS NULL OR p.gender = '' OR (p.faculty IS NULL OR p.faculty = ''))";
+            }
+            
             if ($reminderStatus === 'sent') {
                 // Feature temporarily disabled until DB migration
                 // $conditions[] = "p.profile_reminder_sent_at IS NOT NULL";
