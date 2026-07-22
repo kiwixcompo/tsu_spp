@@ -51,7 +51,12 @@ class Database
     public function query(string $sql, array $params = []): \PDOStatement
     {
         $stmt = $this->connection->prepare($sql);
-        $stmt->execute($params);
+        foreach ($params as $key => $value) {
+            $type = is_int($value) ? PDO::PARAM_INT : (is_bool($value) ? PDO::PARAM_BOOL : (is_null($value) ? PDO::PARAM_NULL : PDO::PARAM_STR));
+            $paramName = is_int($key) ? $key + 1 : $key;
+            $stmt->bindValue($paramName, $value, $type);
+        }
+        $stmt->execute();
         return $stmt;
     }
 
