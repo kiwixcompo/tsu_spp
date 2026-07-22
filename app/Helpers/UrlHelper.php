@@ -16,7 +16,7 @@ function getBaseUrl(): string
     
     // Production server - staff.tsuniversity.ng
     if ($host === 'staff.tsuniversity.ng') {
-        return 'https://staff.tsuniversity.ng/public';
+        return 'https://staff.tsuniversity.ng';
     }
     
     // Local development
