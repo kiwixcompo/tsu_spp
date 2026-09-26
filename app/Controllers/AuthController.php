@@ -308,8 +308,12 @@ class AuthController extends Controller
     public function login(): void
     {
         if (!$this->verifyCSRFToken()) {
-            error_log("CSRF validation failed. Session token: " . ($_SESSION['csrf_token'] ?? 'not set') . ", Posted token: " . ($this->input('csrf_token') ?? 'not set'));
-            $this->json(['error' => 'Invalid CSRF token'], 403);
+            if (isset($_SESSION['csrf_token'])) {
+                error_log("CSRF validation failed (Mismatch). Session token: " . $_SESSION['csrf_token'] . ", Posted token: " . ($this->input('csrf_token') ?? 'not set'));
+            } else {
+                error_log("CSRF validation failed: Session expired or token not set.");
+            }
+            $this->json(['error' => 'Your session has expired. Please refresh the page and try again.'], 403);
             return;
         }
 

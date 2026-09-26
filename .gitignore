@@ -1,5 +1,7 @@
 .env
 .env.local
+deploy-agent.php
+public/deploy-agent.php
 error_log
 *.log
 .vscode/

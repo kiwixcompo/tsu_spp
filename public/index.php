@@ -173,6 +173,23 @@ if (empty($path) || $path === '/') {
     $path = '/' . trim($path, '/');
 }
 
+// ============================================================================
+// DIRECT PUBLIC API DISPATCH FOR TSU MAIN WEBSITE INTEGRATION
+// ============================================================================
+if ($path === '/api/staff-directory' || strpos($path, '/api/staff-directory/') === 0 || $path === '/public/api/staff-directory' || strpos($path, '/public/api/staff-directory/') === 0) {
+    $dirController = new \App\Controllers\DirectoryController();
+    $subSlug = '';
+    if (preg_match('#^/(?:public/)?api/staff-directory/([^/]+)#', $path, $m)) {
+        $subSlug = $m[1];
+    }
+    if (!empty($subSlug)) {
+        $dirController->apiProfile($subSlug);
+    } else {
+        $dirController->apiDirectory();
+    }
+    exit;
+}
+
 if (($_ENV['APP_DEBUG'] ?? 'false') === 'true') {
     error_log("TSU Debug - Final path: " . $path);
 }

@@ -9,6 +9,10 @@ $router->get('/about', 'HomeController@about');
 $router->get('/search', 'SearchController@index');
 $router->get('/directory', 'DirectoryController@index');
 
+// Public API routes for external integration (e.g. main university website)
+$router->get('/api/staff-directory', 'DirectoryController@apiDirectory');
+$router->get('/api/staff-directory/{slug}', 'DirectoryController@apiProfile');
+
 // Legal pages
 $router->get('/terms', 'LegalController@terms');
 $router->get('/privacy-policy', 'LegalController@privacy');

@@ -873,7 +873,7 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             // If table doesn't exist, just log and continue
             if (strpos($e->getMessage(), 'Base table or view not found') !== false) {
-                error_log("Table '$table' does not exist, skipping deletion");
+                // error_log("Table '$table' does not exist, skipping deletion");
             } else {
                 // Re-throw other exceptions
                 throw $e;
@@ -892,7 +892,7 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             // If table doesn't exist, just log and continue
             if (strpos($e->getMessage(), 'Base table or view not found') !== false) {
-                error_log("Table '$table' does not exist, skipping bulk deletion");
+                // error_log("Table '$table' does not exist, skipping bulk deletion");
             } else {
                 // Re-throw other exceptions
                 throw $e;
