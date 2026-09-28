@@ -719,7 +719,7 @@ class AdminController extends Controller
 
             // Hash new password
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-            $this->db->query("UPDATE users SET password = ? WHERE id = ?", [$hashedPassword, $userId]);
+            $this->db->query("UPDATE users SET password_hash = ? WHERE id = ?", [$hashedPassword, $userId]);
 
             $this->logActivity('admin_reset_user_password', ['user_id' => $userId, 'email' => $user['email']]);
 

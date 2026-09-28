@@ -294,7 +294,7 @@ class EmailHelper
             error_log("===================================");
             
             // Send email
-            $result = @mail($to, $subject, $body, $headers);
+            $result = @\mail($to, $subject, $body, $headers);
             
             if ($result) {
                 error_log("✓ mail() function: Email sent successfully to: $to");
